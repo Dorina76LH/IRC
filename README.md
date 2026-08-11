@@ -14,9 +14,9 @@ client.
 
 ## Technical choices
 
-- **Input/Output multiplexing**: `poll()` ? 
-- **Reference client**: WeeChat ?
-- **Protocol reference**: RFC 1459 / RFC 2811 (channels and modes) / RFC 2812 (message format) ?
+- **Input/Output multiplexing**: `poll()` 
+- **Reference client**: Irrsi
+- **Protocol reference**: RFC 1459
 - **Standard**: strict C++98 (`-Wall -Wextra -Werror -std=c++98`)
 
 ## Build
@@ -42,7 +42,7 @@ Example:
 ./ircserv 6667 mypassword
 ```
 
-## Connecting with WeeChat / Irssi ? 
+## Connecting with Irssi ? 
 
 ```
 
@@ -59,6 +59,7 @@ Example:
 - `KICK` — eject a client from a channel *(channel operator)*
 - `INVITE` — invite a client to a channel *(channel operator)*
 - `TOPIC` — view or change a channel's topic *(operator-only if mode +t is set)*
+
 - `MODE` — change a channel's mode *(channel operator)*
   - `i`: set/remove invite-only channel
   - `t`: set/remove the restriction of TOPIC to channel operators
