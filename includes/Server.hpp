@@ -9,9 +9,9 @@
 class server
 {
 	private:
-		int				_fdserver;
+		int				_fdServer;
 		int				_port;
 		std::string		_password;
 	public:
-		
+		void setupSocket();
 };
