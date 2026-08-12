@@ -18,4 +18,11 @@ void server::setupSocket()
 		// - sizeof car taille en octet peux varier en fonction de l'option
 		throw std::runtime_error("Error : setsockopt()");
 	}
+
+	int flags = fcntl(_fdServer, F_GETFL, 0);
+	if (flags == -1)
+		throw std::runtime_error("Error : fcntl() F_GETFL");
+
+	if (fcntl(_fdServer, F_SETFL, flags | O_NONBLOCK) == -1)
+		throw std::runtime_error("Error : fcntl() F_SETFL");
 }
