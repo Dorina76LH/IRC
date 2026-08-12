@@ -3,13 +3,13 @@
 Server::Server(int port, const std::string& password)
 : _fdServer(-1), _port(port), _password(password)
 {
-    setupSocket();
+	setupSocket();
 }
 
 Server::~Server()
 {
-    if (_fdServer != -1)
-        close(_fdServer);
+	if (_fdServer != -1)
+		close(_fdServer);
 }
 
 void Server::setupSocket()
@@ -42,11 +42,39 @@ void Server::setupSocket()
 	std::memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET; // IPV4
 	addr.sin_addr.s_addr = INADDR_ANY; // ip sur laquelle ecouter, ici INADDR_ANY = toute les ip de la machine
-	addr.sin_port = htons(_port); // convertit au format standard le port 
+	addr.sin_port = htons(_port); // convertit au format standard le port
 
 	if (bind(_fdServer, (struct sockaddr*)&addr, sizeof(addr)) == -1)
 		throw std::runtime_error("Error : bind()");
 
 	if (listen(_fdServer, SOMAXCONN) == -1) // SOMAXCONN = valeur max possible de ce systeme
 		throw std::runtime_error("Error : listen()");
+}
+
+void Server::run()
+{
+	struct pollfd serverPfd;
+	serverPfd.fd = _fdServer;
+	serverPfd.events = POLLIN; // = 1 = y'a t'il des donnée a lire, si oui le dire dans revents
+	serverPfd.revents = 0;
+	_pollfds.pushback(serverPfd);
+
+	std::cout << "test" << std::endl;
+	while (true)
+	{
+		int ret = poll(_pollfds.data(), _pollfds.size(), -1); // quels fds ecouter, -1 = attend indefiniment
+		if (ret == -1)
+			throw std::runtime_error("Error : poll()");
+
+		for (size_t i = 0; i < _pollfds.size(); i++)
+		{
+			if (_pollfds[i].revents & POLLIN)
+			{
+				if (_pollfds[i].fd == _fdServer)
+					acceptNewClient();
+				else
+					receiveData(_pollfds[i].fd);
+			}
+		}
+	}
 }
