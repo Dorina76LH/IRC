@@ -5,13 +5,20 @@
 
 #include <sys/socket.h> // socket()
 #include <netinet/in.h> // AF_INET
+#include <fcntl.h> // fcntl(), F_GETFL, F_SETFL, O_NONBLOCK
+#include <arpa/inet.h> // htons()
 
-class server
+class Server
 {
 	private:
 		int				_fdServer;
 		int				_port;
 		std::string		_password;
-	public:
+
 		void setupSocket();
+	public:
+		Server(int port, const std::string &password);
+		~Server();
+
+		void run();
 };
