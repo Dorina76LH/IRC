@@ -68,12 +68,24 @@ void Server::run()
 
 		for (size_t i = 0; i < _pollfds.size(); i++)
 		{
-			if (_pollfds[i].revents & POLLIN)
+			short revents = _pollfds[i].revents;
+			int fd = _pollfds[i].fd;
+			// POLLIN  = 0000 0001 (valeur 1) = Données prete a etre lu
+			// POLLERR = 0000 1000 (valeur 8) = Erreur systeme s'est produite
+			// POLLHUP = 0001 0000 (valeur 16) = le client a fermé de son coté
+			if (revents && (POLLHUP | POLLERR)) // | = OU binaire
 			{
-				if (_pollfds[i].fd == _fdServer)
+				if (fd == _fdServer)
+					throw std::runtime_error("Error : POLLERR");
+				else
+					disconnectClient();
+			}
+			if (revents & POLLIN) // nouvelle connexion / données entrantes
+			{
+				if (fd == _fdServer)
 					acceptNewClient();
 				else
-					receiveData(_pollfds[i].fd);
+					receiveData();
 			}
 		}
 	}
