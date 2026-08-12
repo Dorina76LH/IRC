@@ -5,7 +5,7 @@ void server::setupSocket()
 	_fdServer = socket(AF_INET, SOCK_STREAM, 0);
 	// - AF_INET = IPV4
 	// - SOCK_STREAM = TCP
-	// - 0 = default(TCP)
+	// - 0 = default (ici TCP)
 	if (_fdServer == -1)
 		throw std::runtime_error("Error : socket()");
 
@@ -25,4 +25,13 @@ void server::setupSocket()
 
 	if (fcntl(_fdServer, F_SETFL, flags | O_NONBLOCK) == -1)
 		throw std::runtime_error("Error : fcntl() F_SETFL");
+
+	struct sockaddr_in addr;
+	std::memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET; // IPV4
+	addr.sin_addr.s_addr = INADDR_ANY; // ip sur laquelle ecouter, ici INADDR_ANY = toute les ip de la machine
+	addr.sin_port = htons(_port); // convertit au format standard le port 
+
+	if (bind(_fdServer, (struct sockaddr*)&addr, sizeof(addr)) == -1)
+		throw std::runtime_error("Error : bind()");
 }
