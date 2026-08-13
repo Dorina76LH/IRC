@@ -57,7 +57,7 @@ void Server::run()
 	serverPfd.fd = _fdServer;
 	serverPfd.events = POLLIN; // = 1 = y'a t'il des donnée a lire, si oui le dire dans revents
 	serverPfd.revents = 0;
-	_pollfds.pushback(serverPfd);
+	_pollfds.push_back(serverPfd);
 
 	std::cout << "test" << std::endl;
 	while (true)

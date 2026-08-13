@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <unistd.h>
+#include <cstring>
 
 #include <sys/socket.h>		// socket()
 #include <netinet/in.h>		// AF_INET
