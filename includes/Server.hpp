@@ -23,6 +23,8 @@ class Server
 
 		void setupSocket();
 		void acceptNewClient();
+		void disconnectClient(size_t index);
+		bool receiveData(int fd, size_t index);
 	public:
 		Server(int port, const std::string &password);
 		~Server();

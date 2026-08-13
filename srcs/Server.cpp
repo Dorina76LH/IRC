@@ -51,6 +51,79 @@ void Server::setupSocket()
 		throw std::runtime_error("Error : listen()");
 }
 
+void Server::acceptNewClient()
+{
+	struct sockaddr_in clientAddr;
+	socklen_t clientAddrLen = sizeof(clientAddr);
+
+	// accepter la connexion
+	int clientFd = accept(_fdServer, (struct sockaddr*)&clientAddr, &clientAddrLen);
+	if (clientFd == -1)
+	{
+		std::cerr << "Error : accept() client" << std::endl;
+		return;
+	}
+
+	// non-bloquant pour les clients aussi
+	if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
+	{
+		std::cerr << "Error : fcntl() client" << std::endl;
+		close(clientFd);
+		return;
+	}
+
+	struct pollfd clientPfd;
+	clientPfd.fd = clientFd;
+	clientPfd.events = POLLIN;
+	clientPfd.revents = 0;
+
+	_pollfds.push_back(clientPfd);
+
+	std::cout << "New client, fd : " << clientFd << std::endl;
+}
+
+void Server::disconnectClient(size_t index)
+{
+	if (index >= _pollfds.size())
+		return;
+
+	int fd = _pollfds[index].fd;
+
+	close(fd);
+
+	_pollfds.erase(_pollfds.begin() + index);
+
+	std::cout << "Client fd : " << fd << " disconnected." << std::endl;
+}
+
+bool Server::receiveData(int fd, size_t index)
+{
+	char buffer[1024];
+
+	std::memset(buffer, 0, sizeof(buffer));
+
+	ssize_t bytesRead = recv(fd, buffer, sizeof(buffer) - 1, 0);
+
+	if (bytesRead < 0)
+	{
+		std::cerr << "Error : recv() " << fd << std::endl;
+		disconnectClient(index);
+		return true;
+	}
+	else if (bytesRead == 0)
+	{
+		disconnectClient(index);
+		return true;
+	}
+	else
+	{
+		std::string message(buffer, bytesRead);
+		std::cout << "Client fd : " << fd << " : " << message;
+	
+		return false;
+	}
+}
+
 void Server::run()
 {
 	if (_pollfds.empty())
@@ -110,35 +183,4 @@ void Server::run()
 			}
 		}
 	}
-}
-
-void Server::acceptNewClient()
-{
-	struct sockaddr_in clientAddr;
-	socklen_t clientAddrLen = sizeof(clientAddr);
-
-	// accepter la connexion
-	int clientFd = accept(_fdServer, (struct sockaddr*)&clientAddr, &clientAddrLen);
-	if (clientFd == -1)
-	{
-		std::cerr << "Error : accept() client" << std::endl;
-		return;
-	}
-
-	// non-bloquant pour les clients aussi
-	if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
-	{
-		std::cerr << "Error : fcntl() client" << std::endl;
-		close(clientFd);
-		return;
-	}
-
-	struct pollfd clientPfd;
-	clientPfd.fd = clientFd;
-	clientPfd.events = POLLIN;
-	clientPfd.revents = 0;
-
-	_pollfds.push_back(clientPfd);
-
-	std::cout << "New client, fd : " << clientFd << std::endl;
 }
