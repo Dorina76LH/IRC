@@ -22,6 +22,7 @@ class Server
 		std::vector<struct pollfd>	_pollfds;
 
 		void setupSocket();
+		void acceptNewClient();
 	public:
 		Server(int port, const std::string &password);
 		~Server();
