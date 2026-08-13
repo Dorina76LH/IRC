@@ -53,39 +53,60 @@ void Server::setupSocket()
 
 void Server::run()
 {
-	struct pollfd serverPfd;
-	serverPfd.fd = _fdServer;
-	serverPfd.events = POLLIN; // = 1 = y'a t'il des donnée a lire, si oui le dire dans revents
-	serverPfd.revents = 0;
-	_pollfds.push_back(serverPfd);
+	if (_pollfds.empty())
+	{
+		struct pollfd serverPfd;
+		serverPfd.fd = _fdServer;
+		serverPfd.events = POLLIN; // = 1 = y'a t'il des donnée a lire, si oui le dire dans revents
+		serverPfd.revents = 0;
+		_pollfds.push_back(serverPfd);
+	}
 
-	std::cout << "test" << std::endl;
+	std::cout << "Server running..." << std::endl;
 	while (true)
 	{
 		int ret = poll(_pollfds.data(), _pollfds.size(), -1); // quels fds ecouter, -1 = attend indefiniment
 		if (ret == -1)
 			throw std::runtime_error("Error : poll()");
 
-		for (size_t i = 0; i < _pollfds.size(); i++)
+		size_t current_size = _pollfds.size();
+
+		for (size_t i = 0; i < current_size; i++)
 		{
 			short revents = _pollfds[i].revents;
 			int fd = _pollfds[i].fd;
-			// POLLIN  = 0000 0001 (valeur 1) = Données prete a etre lu
-			// POLLERR = 0000 1000 (valeur 8) = Erreur systeme s'est produite
-			// POLLHUP = 0001 0000 (valeur 16) = le client a fermé de son coté
-			if (revents && (POLLHUP | POLLERR)) // | = OU binaire
-			{
-				if (fd == _fdServer)
-					throw std::runtime_error("Error : POLLERR");
-				else
-					disconnectClient();
-			}
+
+			if (revents == 0)
+				continue;
+
+			bool clientDisconnected = false;
+
 			if (revents & POLLIN) // nouvelle connexion / données entrantes
 			{
 				if (fd == _fdServer)
 					acceptNewClient();
 				else
-					receiveData();
+					clientDisconnected = receiveData(fd, i);
+			}
+
+			// POLLIN  = 0000 0001 (valeur 1) = Données prete a etre lu
+			// POLLERR = 0000 1000 (valeur 8) = Erreur systeme s'est produite
+			// POLLHUP = 0001 0000 (valeur 16) = le client a fermé de son coté
+			// POLLNVAL = 0010 0000 (valeur 32) = Descripteur invalide
+			if (!clientDisconnected && (revents & (POLLERR | POLLHUP | POLLNVAL))) // (| = OU binaire) (& = ET binaire)
+			{
+				if (fd == _fdServer)
+					throw std::runtime_error("Error : POLLERR");
+				else
+				{
+					disconnectClient(i);
+					clientDisconnected = true;
+				}
+			}
+			if (clientDisconnected)
+			{
+				i--;
+				current_size--;
 			}
 		}
 	}

@@ -5,6 +5,7 @@
 #include <vector>
 #include <unistd.h>
 #include <cstring>
+#include <cstdlib>
 
 #include <sys/socket.h>		// socket()
 #include <netinet/in.h>		// AF_INET
