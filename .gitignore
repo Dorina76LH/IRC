@@ -1,0 +1,18 @@
+# Executables
+ircserv
+test_client
+test_server
+test_channel
+
+# Object files
+obj/
+*.o
+
+# OS/editor junk
+.DS_Store
+*.swp
+*~
+
+# IDE
+.vscode/
+.idea/
