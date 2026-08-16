@@ -6,7 +6,7 @@
 /*   By: doberes <doberes@student.42lehavre.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/15 18:49:08 by doberes           #+#    #+#             */
-/*   Updated: 2026/08/16 11:28:37 by doberes          ###   ########.fr       */
+/*   Updated: 2026/08/16 16:00:43 by doberes          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,6 +91,17 @@ class Client
         void setAuthenticated(bool isAuthenticated);
         
         //& Buffer management
+        //TODO : Implement methods to manage the read and write buffers, such as adding data to the buffers, clearing them, and checking their sizes.
+        
+        //& Read buffer management - data coming from the client (read from the socket)
+        void        appendToReadBuffer(const std::string &data);
+        bool        hasCompleteLine() const;
+        std::string extractLine();
+
+        //& Write buffer management - data to be sent to the client (write to the socket)
+        // void    appendToWriteBuffer(const std::string &message);
+        // bool    hasDataToSend() const;
+        // void    clearSentData(size_t bytesSent);
         
         private:
         
@@ -115,7 +126,6 @@ class Client
         std::string _readBuffer;        // incoming data buffer, read from socket
         std::string _writeBuffer;       // outgoing data buffer, to be sent to socket
 
-        //TODO : Implement methods to manage the read and write buffers, such as adding data to the buffers, clearing them, and checking their sizes.
         
 };
 
