@@ -6,7 +6,7 @@
 /*   By: doberes <doberes@student.42lehavre.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/15 19:08:52 by doberes           #+#    #+#             */
-/*   Updated: 2026/08/16 17:23:34 by doberes          ###   ########.fr       */
+/*   Updated: 2026/08/17 10:38:18 by doberes          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,6 +78,17 @@ const std::string & Client::getReadBuffer() const
 }
 
 //? Get the write buffer
+//& It does NOT automatically add a trailing '\r\n'.
+//&
+//& Why? Because Client has no way to know whether the buffer's current
+//& trailing bytes belong to a fully sent message or to a message still
+//& partially sent (send() can transmit only part of the buffer at once).
+//& Automatically appending '\r\n' here could insert it in the middle of
+//& an unsent fragment, corrupting the IRC protocol stream.
+//&
+//& The caller (Server / command handlers) is responsible for building
+//& a complete, correctly terminated IRC message ("...\r\n") BEFORE
+//& calling this method.
 const std::string & Client::getWriteBuffer() const
 {
     return (this->_writeBuffer);
@@ -119,7 +130,7 @@ void Client::setAuthenticated(bool isAuthenticated)
 }
 
 
-//* -- Read buffer management -- *//
+//* -- Read buffer management -> client to server -- *//
 // Data coming from the client (read from the socket)
 
 //? Append data to the read buffer
@@ -170,6 +181,36 @@ std::string Client::extractLine()
     }
 
     return (line);
+}
+
+//* -- Write buffer management -> server to client -- *//
+
+//& Append data to the write buffer
+void Client::appendToWriteBuffer(const std::string &data)
+{
+    this->_writeBuffer += data;
+}
+
+//& Check if the write buffer has data to send to the client
+bool Client::hasDataToSend() const
+{
+    bool hasData = !this->_writeBuffer.empty();
+    return (hasData);
+}
+
+//& Clear the sent data from the write buffer after sending it to the client
+void Client::clearSentData(size_t bytesSent)
+{
+    if (bytesSent > this->_writeBuffer.size())
+    {
+        //& If bytesSent is greater than the size of the write buffer, clear the entire buffer
+        this->_writeBuffer.clear();
+    }
+    else
+    {
+        //& Otherwise, erase the sent data from the write buffer
+        this->_writeBuffer.erase(0, bytesSent);
+    }
 }
 
 //* -- Non-member functions -- *//
