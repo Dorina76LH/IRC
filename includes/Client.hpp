@@ -6,7 +6,7 @@
 /*   By: doberes <doberes@student.42lehavre.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/15 18:49:08 by doberes           #+#    #+#             */
-/*   Updated: 2026/08/17 10:23:50 by doberes          ###   ########.fr       */
+/*   Updated: 2026/08/17 12:52:42 by doberes          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,9 +89,6 @@ class Client
         void setRealname(const std::string &realname);
         void setRegistered(bool isRegistered);
         void setAuthenticated(bool isAuthenticated);
-        
-        //& Buffer management
-        //TODO : Implement methods to manage the read and write buffers, such as adding data to the buffers, clearing them, and checking their sizes.
         
         //& Read buffer management - data coming from the client to the server (read from the socket)
         void        appendToReadBuffer(const std::string &data);
