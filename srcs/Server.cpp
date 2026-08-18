@@ -8,6 +8,11 @@ Server::Server(int port, const std::string& password)
 
 Server::~Server()
 {
+	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+		delete it->second;
+
+	_clients.clear();
+
 	if (_fdServer != -1)
 		close(_fdServer);
 }
@@ -64,6 +69,14 @@ void Server::acceptNewClient()
 		return;
 	}
 
+	int flags = fcntl(clientFd, F_GETFL, 0);
+	if (flags == -1 || fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) == -1)
+	{
+		std::cerr << "Error : fcntl() client" << std::endl;
+		close(clientFd);
+		return;
+	}
+
 	// non-bloquant pour les clients aussi
 	if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
 	{
@@ -71,6 +84,8 @@ void Server::acceptNewClient()
 		close(clientFd);
 		return;
 	}
+
+	_clients[clientFd] = new Client(clientFd);
 
 	struct pollfd clientPfd;
 	clientPfd.fd = clientFd;
@@ -89,6 +104,13 @@ void Server::disconnectClient(size_t index)
 
 	int fd = _pollfds[index].fd;
 
+	std::map<int, Client*>::iterator it = _clients.find(fd);
+	if (it != _clients.end())
+	{
+		delete it->second;
+		_clients.erase(it);
+	}
+
 	close(fd);
 
 	_pollfds.erase(_pollfds.begin() + index);
@@ -104,24 +126,28 @@ bool Server::receiveData(int fd, size_t index)
 
 	ssize_t bytesRead = recv(fd, buffer, sizeof(buffer) - 1, 0);
 
-	if (bytesRead < 0)
+	if (bytesRead <= 0)
 	{
-		std::cerr << "Error : recv() " << fd << std::endl;
+		if (bytesRead < 0)
+			std::cerr << "Error : recv() " << fd << std::endl;
+
 		disconnectClient(index);
 		return true;
 	}
-	else if (bytesRead == 0)
+
+	Client *client = _clients[fd];
+
+	client->appendToReadBuffer(std::string(buffer, bytesRead));
+
+	while (client->hasCompleteLine())
 	{
-		disconnectClient(index);
-		return true;
+		std::string line = client->extractLine();
+
+		std::cout << "Message received from (FD:" << fd << ") : " << line << std::endl;
+
 	}
-	else
-	{
-		std::string message(buffer, bytesRead);
-		std::cout << "Message received from (FD:" << fd << ") : " << message;
-	
-		return false;
-	}
+
+	return false;
 }
 
 void Server::run()

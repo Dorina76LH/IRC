@@ -1,12 +1,13 @@
 #pragma once
 
+#include "Client.hpp"
+#include <unistd.h>
 #include <iostream>
 #include <string>
-#include <vector>
-#include <unistd.h>
 #include <cstring>
 #include <cstdlib>
-
+#include <vector>
+#include <map>
 #include <sys/socket.h>		// socket()
 #include <netinet/in.h>		// AF_INET
 #include <fcntl.h>			// fcntl(), F_GETFL, F_SETFL, O_NONBLOCK
@@ -20,6 +21,7 @@ class Server
 		int							_port;
 		std::string					_password;
 		std::vector<struct pollfd>	_pollfds;
+		std::map<int, Client*>		_clients;
 
 		void setupSocket();
 		void acceptNewClient();
