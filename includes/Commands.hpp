@@ -26,6 +26,25 @@ class Commands
         */
         static void handleNick(Client &client, const std::vector<std::string> &commandParams, const std::vector<std::string> &nicknamesInUse);
 
+        /*
+        Handles the PASS command (RFC 1459).
+        Must be the first command sent by a client, before NICK/USER.
+        client : the client who sent the PASS command
+        commandParams : the parameters that followed "PASS" (commandParams[0] = password attempt)
+        serverPassword : the password configured for this server instance
+        */
+        static void handlePass(Client &client, const std::vector<std::string> &commandParams, const std::string &serverPassword);
+
+        /*
+        Handles the USER command (RFC 1459).
+        client : the client who sent the USER command
+        commandParams : the parameters that followed "USER"
+        (commandParams[0] = username, commandParams[1] = hostname, commandParams[2] = servername,
+        commandParams[3] = realname). hostname/servername are client-supplied and untrusted,
+        so they are accepted but ignored, as most real-world IRC servers do.
+        */
+        static void handleUser(Client &client, const std::vector<std::string> &commandParams);
+
     private:
 
         // Utility class only: no instance should ever be created.
