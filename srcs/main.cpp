@@ -28,7 +28,8 @@ int Parsing(int argc, char **argv)
 		return 1;
 	}
 
-	if (std::atoi(argv[1]) < 1 || std::atoi(argv[1]) > 65535)
+	long port = std::atol(argv[1]);
+	if (port < 1 || port > 65535)
 	{
 		std::cerr << "Error: port must be between 1 and 65535." << std::endl;
 		return 1;
