@@ -79,7 +79,7 @@ void Server::acceptNewClient()
 
 	_pollfds.push_back(clientPfd);
 
-	std::cout << "New client, fd : " << clientFd << std::endl;
+	std::cout << "New client : (FD:" << clientFd << ")" << std::endl;
 }
 
 void Server::disconnectClient(size_t index)
@@ -93,7 +93,7 @@ void Server::disconnectClient(size_t index)
 
 	_pollfds.erase(_pollfds.begin() + index);
 
-	std::cout << "Client fd : " << fd << " disconnected." << std::endl;
+	std::cout << "Client (FD:" << fd << ") disconnected." << std::endl;
 }
 
 bool Server::receiveData(int fd, size_t index)
@@ -118,7 +118,7 @@ bool Server::receiveData(int fd, size_t index)
 	else
 	{
 		std::string message(buffer, bytesRead);
-		std::cout << "Client fd : " << fd << " : " << message;
+		std::cout << "Message received from (FD:" << fd << ") : " << message;
 	
 		return false;
 	}
