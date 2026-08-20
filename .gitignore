@@ -3,6 +3,7 @@ ircserv
 test_client
 test_server
 test_channel
+test_commands
 
 # Object files
 obj/
