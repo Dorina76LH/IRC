@@ -15,7 +15,17 @@ OBJ_DIR		= obj
 
 SRCS_FILES	= main.cpp \
               Client.cpp \
-			  Server.cpp
+			  Server.cpp \
+			  Channel.cpp \
+			  commands/Invite.cpp \
+			  commands/Join.cpp \
+			  commands/Kick.cpp \
+			  commands/Mode.cpp \
+			  commands/Nick.cpp \
+			  commands/Pass.cpp \
+			  commands/PrivMsg.cpp \
+			  commands/Topic.cpp \
+			  commands/User.cpp
 
 OBJ_FILES	= $(SRCS_FILES:.cpp=.o)
 			  
