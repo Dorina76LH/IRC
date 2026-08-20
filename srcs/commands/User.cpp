@@ -15,7 +15,7 @@ void Commands::handleUser(Client &client, const std::vector<std::string> &comman
     // <username> <hostname> <servername> <realname>
     if (commandParams.size() < 4 || commandParams[0].empty() || commandParams[3].empty())
     {
-        client.appendToWriteBuffer(Commands::buildReply("461", replyTarget, "USER :Not enough parameters"));
+        client.appendToWriteBuffer(Commands::buildReply("461", replyTarget, "USER", "Not enough parameters"));
         return;
     }
 

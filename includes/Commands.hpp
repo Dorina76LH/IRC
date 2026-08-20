@@ -18,6 +18,18 @@ class Commands
         }
 
         /*
+        Builds an IRC server reply with an extra middle parameter (e.g. the name of the
+        command that failed): ":ircserv <code> <target> <param> :<message>\r\n"
+        Use this instead of the 3-argument overload whenever <message> would otherwise
+        need to embed a hardcoded ':' itself (that ':' must mark the start of the
+        trailing parameter exactly once, not be duplicated).
+        */
+        static std::string buildReply(const std::string &code, const std::string &target, const std::string &param, const std::string &message)
+        {
+            return (":ircserv " + code + " " + target + " " + param + " :" + message + "\r\n");
+        }
+
+        /*
         Handles the NICK command (RFC 1459).
         client : the client who sent the NICK command
         commandParams : the parameters that followed "NICK" (commandParams[0] = requested nickname)

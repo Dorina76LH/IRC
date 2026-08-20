@@ -14,7 +14,7 @@ void Commands::handlePass(Client &client, const std::vector<std::string> &comman
 
     if (commandParams.empty() || commandParams[0].empty())
     {
-        client.appendToWriteBuffer(Commands::buildReply("461", replyTarget, "PASS :Not enough parameters"));
+        client.appendToWriteBuffer(Commands::buildReply("461", replyTarget, "PASS", "Not enough parameters"));
         return;
     }
 
