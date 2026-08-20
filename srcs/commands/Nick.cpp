@@ -5,7 +5,11 @@
 static const size_t        MAX_NICKNAME_LENGTH = 9;
 
 //RFC 1459 : <special> ::= '-' | '[' | ']' | '\' | '`' | '^' | '{' | '}'
-static const std::string   ALLOWED_SPECIAL_CHARACTERS = "-[]\\`^{}";
+// '|' is added on top of the strict RFC 1459 grammar: because of IRC's Scandinavian
+// origin (RFC 1459, 2.2), '{' '}' '|' are the lowercase equivalents of '[' ']' '\'
+// respectively, so a nickname grammar that accepts the uppercase forms must also
+// accept their lowercase counterpart.
+static const std::string   ALLOWED_SPECIAL_CHARACTERS = "-[]\\`^{}|";
 
 static bool isLetter(char character)
 {
@@ -20,6 +24,34 @@ static bool isDigit(char character)
 static bool isAllowedSpecialCharacter(char character)
 {
     return (ALLOWED_SPECIAL_CHARACTERS.find(character) != std::string::npos);
+}
+
+// RFC 1459, 2.2 : because of IRC's Scandinavian origin, '{' '}' '|' are considered
+// the lowercase equivalents of '[' ']' '\' respectively. This mapping is critical
+// when determining the equivalence of two nicknames: "ada" and "ADA" are the same
+// nickname, but so are "{ada}" and "[ADA]".
+static char ircToUpper(char character)
+{
+    switch (character)
+    {
+        case '{': return ('[');
+        case '}': return (']');
+        case '|': return ('\\');
+        default:  return (static_cast<char>(std::toupper(static_cast<unsigned char>(character))));
+    }
+}
+
+static bool ircNicknamesAreEqual(const std::string &firstNickname, const std::string &secondNickname)
+{
+    if (firstNickname.size() != secondNickname.size())
+        return (false);
+
+    for (size_t index = 0; index < firstNickname.size(); ++index)
+    {
+        if (ircToUpper(firstNickname[index]) != ircToUpper(secondNickname[index]))
+            return (false);
+    }
+    return (true);
 }
 
 // Checks a candidate nickname against the RFC 1459 grammar:
@@ -46,7 +78,7 @@ static bool isNicknameAlreadyUsed(const std::string &nicknameCandidate, const st
 {
     for (size_t index = 0; index < nicknamesInUse.size(); ++index)
     {
-        if (nicknamesInUse[index] == nicknameCandidate)
+        if (ircNicknamesAreEqual(nicknamesInUse[index], nicknameCandidate))
             return (true);
     }
     return (false);

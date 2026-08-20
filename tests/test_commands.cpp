@@ -150,6 +150,17 @@ int main()
     assert(clientL.getWriteBuffer().find(" 433 ") != std::string::npos);
     std::cout << "✅ Nickname collision rejected with 433." << std::endl;
 
+    //& RFC 1459, 2.2 : '{' '}' '|' are the lowercase equivalents of '[' ']' '\',
+    //& so nickname uniqueness must be checked case-insensitively with this mapping.
+    std::cout << COLOR_CYAN << "\n=== Testing NICK collision with IRC casemapping ({}|  <-> []\\ ) ===" << COLOR_RESET << std::endl;
+    Client clientL2(17);
+    std::vector<std::string> casemappedNicknamesInUse;
+    casemappedNicknamesInUse.push_back("ADA[");
+    Commands::handleNick(clientL2, makeParams("ada{"), casemappedNicknamesInUse);
+    assert(clientL2.getNickname().empty());
+    assert(clientL2.getWriteBuffer().find(" 433 ") != std::string::npos);
+    std::cout << "✅ \"ada{\" correctly collides with \"ADA[\" per IRC casemapping." << std::endl;
+
     std::cout << COLOR_GREEN << "\nAll NICK command tests passed!" << COLOR_RESET << std::endl;
 
     std::cout << COLOR_GREEN << "\n==================================================" << std::endl;
