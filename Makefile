@@ -13,8 +13,24 @@ INCLUDES	= -Iincludes
 SRCS_DIR	= srcs
 OBJ_DIR		= obj
 
-SRCS		= $(shell find $(SRCS_DIR) -name '*.cpp')
-OBJS		= $(patsubst $(SRCS_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
+SRCS_FILES	= main.cpp \
+              Client.cpp \
+			  Server.cpp \
+			  Channel.cpp \
+			  commands/Invite.cpp \
+			  commands/Join.cpp \
+			  commands/Kick.cpp \
+			  commands/Mode.cpp \
+			  commands/Nick.cpp \
+			  commands/Pass.cpp \
+			  commands/PrivMsg.cpp \
+			  commands/Topic.cpp \
+			  commands/User.cpp
+
+OBJ_FILES	= $(SRCS_FILES:.cpp=.o)
+			  
+SRCS		= $(addprefix $(SRCS_DIR)/, $(SRCS_FILES))
+OBJS		= $(addprefix $(OBJ_DIR)/, $(OBJ_FILES))
 DEPS		= $(OBJS:.o=.d)
 
 all: $(NAME)
