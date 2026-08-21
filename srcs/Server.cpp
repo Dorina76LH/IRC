@@ -8,6 +8,14 @@ Server::Server(int port, const std::string& password)
 
 Server::~Server()
 {
+	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		close(it->first);
+		delete it->second;
+	}
+
+	_clients.clear();
+
 	if (_fdServer != -1)
 		close(_fdServer);
 }
@@ -31,12 +39,8 @@ void Server::setupSocket()
 		throw std::runtime_error("Error : setsockopt()");
 	}
 
-	int flags = fcntl(_fdServer, F_GETFL, 0);
-	if (flags == -1)
-		throw std::runtime_error("Error : fcntl() F_GETFL");
-
-	if (fcntl(_fdServer, F_SETFL, flags | O_NONBLOCK) == -1)
-		throw std::runtime_error("Error : fcntl() F_SETFL");
+	if (fcntl(_fdServer, F_SETFL, O_NONBLOCK) == -1)
+		throw std::runtime_error("Error : fcntl()");
 
 	struct sockaddr_in addr;
 	std::memset(&addr, 0, sizeof(addr));
@@ -64,13 +68,14 @@ void Server::acceptNewClient()
 		return;
 	}
 
-	// non-bloquant pour les clients aussi
 	if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
 	{
 		std::cerr << "Error : fcntl() client" << std::endl;
 		close(clientFd);
 		return;
 	}
+
+	_clients[clientFd] = new Client(clientFd);
 
 	struct pollfd clientPfd;
 	clientPfd.fd = clientFd;
@@ -89,6 +94,13 @@ void Server::disconnectClient(size_t index)
 
 	int fd = _pollfds[index].fd;
 
+	std::map<int, Client*>::iterator it = _clients.find(fd);
+	if (it != _clients.end())
+	{
+		delete it->second;
+		_clients.erase(it);
+	}
+
 	close(fd);
 
 	_pollfds.erase(_pollfds.begin() + index);
@@ -104,24 +116,28 @@ bool Server::receiveData(int fd, size_t index)
 
 	ssize_t bytesRead = recv(fd, buffer, sizeof(buffer) - 1, 0);
 
-	if (bytesRead < 0)
+	if (bytesRead <= 0)
 	{
-		std::cerr << "Error : recv() " << fd << std::endl;
+		if (bytesRead < 0)
+			std::cerr << "Error : recv() " << fd << std::endl;
+
 		disconnectClient(index);
 		return true;
 	}
-	else if (bytesRead == 0)
+
+	Client *client = _clients[fd];
+
+	client->appendToReadBuffer(std::string(buffer, bytesRead));
+
+	while (client->hasCompleteLine())
 	{
-		disconnectClient(index);
-		return true;
+		std::string line = client->extractLine();
+
+		std::cout << "Message received from (FD:" << fd << ") : " << line << std::endl;
+
 	}
-	else
-	{
-		std::string message(buffer, bytesRead);
-		std::cout << "Message received from (FD:" << fd << ") : " << message;
-	
-		return false;
-	}
+
+	return false;
 }
 
 void Server::run()
@@ -136,11 +152,19 @@ void Server::run()
 	}
 
 	std::cout << "Server running..." << std::endl;
-	while (true)
+	while (g_running)
 	{
 		int ret = poll(_pollfds.data(), _pollfds.size(), -1); // quels fds ecouter, -1 = attend indefiniment
 		if (ret == -1)
+		{
+			if (!g_running)
+			{
+				std::cout << "\nSignal detected." << std::endl;
+				return;
+			}
+			// CTRL+C / CTRL+'\'
 			throw std::runtime_error("Error : poll()");
+		}
 
 		size_t current_size = _pollfds.size();
 
@@ -183,4 +207,14 @@ void Server::run()
 			}
 		}
 	}
+}
+
+Client* Server::getClientByNickname(const std::string& nickname)
+{
+	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		if (it->second && it->second->getNickname() == nickname)
+			return it->second;
+	}
+	return NULL;
 }
