@@ -39,12 +39,8 @@ void Server::setupSocket()
 		throw std::runtime_error("Error : setsockopt()");
 	}
 
-	int flags = fcntl(_fdServer, F_GETFL, 0);
-	if (flags == -1)
-		throw std::runtime_error("Error : fcntl() F_GETFL");
-
-	if (fcntl(_fdServer, F_SETFL, flags | O_NONBLOCK) == -1)
-		throw std::runtime_error("Error : fcntl() F_SETFL");
+	if (fcntl(_fdServer, F_SETFL, O_NONBLOCK) == -1)
+		throw std::runtime_error("Error : fcntl()");
 
 	struct sockaddr_in addr;
 	std::memset(&addr, 0, sizeof(addr));
@@ -72,8 +68,7 @@ void Server::acceptNewClient()
 		return;
 	}
 
-	int flags = fcntl(clientFd, F_GETFL, 0);
-	if (flags == -1 || fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) == -1)
+	if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
 	{
 		std::cerr << "Error : fcntl() client" << std::endl;
 		close(clientFd);
