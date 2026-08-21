@@ -19,16 +19,18 @@
 class Server
 {
 	private:
-		int							_fdServer;
-		int							_port;
-		std::string					_password;
-		std::vector<struct pollfd>	_pollfds;
-		std::map<int, Client*>		_clients;
+		int								_fdServer;
+		int								_port;
+		std::string						_password;
+		std::vector<struct pollfd>		_pollfds;
+		std::map<int, Client*>			_clients;
+		// std::map<std::string, Channel*>	_channels;
 
 		void setupSocket();
 		void acceptNewClient();
 		void disconnectClient(size_t index);
 		bool receiveData(int fd, size_t index);
+		Client* getClientByNickname(const std::string &nickname);
 	public:
 		Server(int port, const std::string &password);
 		~Server();
