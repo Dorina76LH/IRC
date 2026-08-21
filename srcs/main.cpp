@@ -1,5 +1,13 @@
 #include "../includes/Server.hpp"
 
+volatile bool g_running = true;
+
+void signalHandler(int signum)
+{
+	(void)signum;
+	g_running = false;
+}
+
 bool isNumber(const std::string &str)
 {
 	if (str.empty())
@@ -48,6 +56,9 @@ int main(int argc, char **argv)
 {
 	if (Parsing(argc, argv) != 0)
 		return 1;
+	std::signal(SIGINT, signalHandler);
+	std::signal(SIGQUIT, signalHandler);
+	std::signal(SIGTERM, signalHandler);
 	try
 	{
 		Server server(std::atoi(argv[1]), argv[2]);
@@ -59,5 +70,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	std::cout << "Server stopped normally." << std::endl;
 	return 0;
 }
