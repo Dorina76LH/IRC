@@ -9,7 +9,10 @@ Server::Server(int port, const std::string& password)
 Server::~Server()
 {
 	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		close(it->first);
 		delete it->second;
+	}
 
 	_clients.clear();
 
@@ -71,14 +74,6 @@ void Server::acceptNewClient()
 
 	int flags = fcntl(clientFd, F_GETFL, 0);
 	if (flags == -1 || fcntl(clientFd, F_SETFL, flags | O_NONBLOCK) == -1)
-	{
-		std::cerr << "Error : fcntl() client" << std::endl;
-		close(clientFd);
-		return;
-	}
-
-	// non-bloquant pour les clients aussi
-	if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
 	{
 		std::cerr << "Error : fcntl() client" << std::endl;
 		close(clientFd);
@@ -166,7 +161,15 @@ void Server::run()
 	{
 		int ret = poll(_pollfds.data(), _pollfds.size(), -1); // quels fds ecouter, -1 = attend indefiniment
 		if (ret == -1)
+		{
+			// CTRL+C / CTRL+'\'
+			if (errno == EINTR)
+			{
+				std::cout << "\nSignal detected." << std::endl;
+				break;
+			}
 			throw std::runtime_error("Error : poll()");
+		}
 
 		size_t current_size = _pollfds.size();
 

@@ -13,6 +13,8 @@
 #include <fcntl.h>			// fcntl(), F_GETFL, F_SETFL, O_NONBLOCK
 #include <arpa/inet.h>		// htons()
 #include <poll.h>			// poll()
+#include <csignal>
+#include <cerrno>
 
 class Server
 {
