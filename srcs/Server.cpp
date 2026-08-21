@@ -152,17 +152,17 @@ void Server::run()
 	}
 
 	std::cout << "Server running..." << std::endl;
-	while (true)
+	while (g_running)
 	{
 		int ret = poll(_pollfds.data(), _pollfds.size(), -1); // quels fds ecouter, -1 = attend indefiniment
 		if (ret == -1)
 		{
-			// CTRL+C / CTRL+'\'
-			if (errno == EINTR)
+			if (!g_running)
 			{
 				std::cout << "\nSignal detected." << std::endl;
-				break;
+				return;
 			}
+			// CTRL+C / CTRL+'\'
 			throw std::runtime_error("Error : poll()");
 		}
 

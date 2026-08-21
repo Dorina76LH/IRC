@@ -16,6 +16,8 @@
 #include <csignal>
 #include <cerrno>
 
+extern volatile bool g_running;
+
 class Server
 {
 	private:
