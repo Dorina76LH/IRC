@@ -1,51 +1,78 @@
 #include "../includes/Parser.hpp"
 #include <iostream>
+#include <cassert>
 
-static void test(const std::string &line)
+#define COLOR_RESET "\033[0m"
+#define COLOR_GREEN "\033[1;32m"
+
+// c++ -std=c++98 -Wall -Wextra -Werror tests/test_parser.cpp srcs/Parser.cpp -o test_parser
+
+static void checkParsing(const std::string &line, const std::string &expectedCommand, const std::vector<std::string> &expectedParams)
 {
     std::string command;
     std::vector<std::string> params;
 
     Parser::parseLine(line, command, params);
 
-    std::cout << "line: \"" << line << "\"" << std::endl;
-    std::cout << "  command: \"" << command << "\"" << std::endl;
-    for (size_t i = 0; i < params.size(); i++)
-        std::cout << "  params[" << i << "]: \"" << params[i] << "\"" << std::endl;
-    std::cout << std::endl;
+    assert(command == expectedCommand);
+    assert(params.size() == expectedParams.size());
+    for (size_t i = 0; i < expectedParams.size(); i++)
+        assert(params[i] == expectedParams[i]);
+}
+
+static std::vector<std::string> makeParams()
+{
+    return (std::vector<std::string>());
+}
+
+static std::vector<std::string> makeParams(const std::string &p0)
+{
+    std::vector<std::string> params;
+    params.push_back(p0);
+    return (params);
+}
+
+static std::vector<std::string> makeParams(const std::string &p0, const std::string &p1)
+{
+    std::vector<std::string> params;
+    params.push_back(p0);
+    params.push_back(p1);
+    return (params);
 }
 
 int main()
 {
     // 1. commande simple avec un seul parametre
-    test("NICK ada");
+    checkParsing("NICK ada", "NICK", makeParams("ada"));
 
     // 2. plusieurs parametres separes par un seul espace
-    test("JOIN #chan1 #chan2");
+    checkParsing("JOIN #chan1 #chan2", "JOIN", makeParams("#chan1", "#chan2"));
 
     // 3. dernier parametre avec des espaces (trailing param)
-    test("PRIVMSG #chan :salut tout le monde");
+    checkParsing("PRIVMSG #chan :salut tout le monde", "PRIVMSG", makeParams("#chan", "salut tout le monde"));
 
     // 4. commande seule, sans aucun parametre
-    test("PASS");
+    checkParsing("PASS", "PASS", makeParams());
 
     // 5. espaces multiples consecutifs entre les parametres
-    test("JOIN   #chan1     #chan2");
+    checkParsing("JOIN   #chan1     #chan2", "JOIN", makeParams("#chan1", "#chan2"));
 
     // 6. trailing param vide (le ':' est le dernier caractere de la ligne)
-    test("TOPIC #chan :");
+    checkParsing("TOPIC #chan :", "TOPIC", makeParams("#chan", ""));
 
     // 7. un ':' qui n'est pas en debut de mot ne doit rien declencher
-    test("PRIVMSG #chan :salut: comment ca va");
+    checkParsing("PRIVMSG #chan :salut: comment ca va", "PRIVMSG", makeParams("#chan", "salut: comment ca va"));
 
     // 8. ligne completement vide
-    test("");
+    checkParsing("", "", makeParams());
 
     // 9. ligne qui ne contient que des espaces
-    test("   ");
+    checkParsing("   ", "", makeParams());
 
     // 10. espace en fin de ligne, sans trailing param
-    test("JOIN #chan ");
+    checkParsing("JOIN #chan ", "JOIN", makeParams("#chan"));
+
+    std::cout << COLOR_GREEN << "All Parser tests passed!" << COLOR_RESET << std::endl;
 
     return 0;
 }
