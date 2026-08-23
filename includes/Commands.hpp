@@ -3,7 +3,10 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include "Client.hpp"
+
+class Channel;
 
 class Commands
 {
@@ -56,6 +59,18 @@ class Commands
         so they are accepted but ignored, as most real-world IRC servers do.
         */
         static void handleUser(Client &client, const std::vector<std::string> &commandParams);
+
+        /*
+        Handles the JOIN command (RFC 1459).
+        client : the client who sent the JOIN command
+        commandParams : the parameters that followed "JOIN"
+        (commandParams[0] = comma-separated channel names, commandParams[1] = optional
+        comma-separated keys, matched to channel names by position)
+        channels : all channels known to the server, keyed by channel name.
+        A channel that does not exist yet is created and the joining client
+        becomes its first operator.
+        */
+        static void handleJoin(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels);
 
     private:
 
