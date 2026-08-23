@@ -7,6 +7,7 @@ test_commands
 test_join
 test_topic
 test_part
+test_privmsg
 
 # Object files
 obj/

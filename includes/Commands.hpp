@@ -95,6 +95,18 @@ class Commands
         */
         static void handlePart(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels);
 
+        /*
+        Handles the PRIVMSG command (RFC 1459).
+        client : the client who sent the PRIVMSG command
+        commandParams : the parameters that followed "PRIVMSG"
+        (commandParams[0] = comma-separated targets, each either a channel name
+        starting with '#'/'&' or a nickname ; commandParams[1] = the message)
+        channels : all channels known to the server, keyed by channel name.
+        clients : every client currently connected to the server, keyed by fd socket.
+        Used to resolve a nickname target to the Client it belongs to.
+        */
+        static void handlePrivMsg(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels, std::map<int, Client *> &clients);
+
     private:
 
         // Utility class only: no instance should ever be created.
