@@ -5,6 +5,7 @@ test_server
 test_channel
 test_commands
 test_join
+test_topic
 
 # Object files
 obj/

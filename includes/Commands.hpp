@@ -72,6 +72,17 @@ class Commands
         */
         static void handleJoin(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels);
 
+        /*
+        Handles the TOPIC command (RFC 1459).
+        client : the client who sent the TOPIC command
+        commandParams : the parameters that followed "TOPIC"
+        (commandParams[0] = channel name, commandParams[1] = new topic, only present
+        when the client wants to CHANGE the topic; absent commandParams[1] means the
+        client only wants to VIEW the current topic, even if that means an empty string)
+        channels : all channels known to the server, keyed by channel name.
+        */
+        static void handleTopic(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels);
+
     private:
 
         // Utility class only: no instance should ever be created.
