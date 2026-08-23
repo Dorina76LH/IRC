@@ -83,6 +83,18 @@ class Commands
         */
         static void handleTopic(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels);
 
+        /*
+        Handles the PART command (RFC 1459).
+        client : the client who sent the PART command
+        commandParams : the parameters that followed "PART"
+        (commandParams[0] = comma-separated channel names, commandParams[1] = optional
+        part message)
+        channels : all channels known to the server, keyed by channel name.
+        A channel that becomes empty after the client leaves is destroyed and removed
+        from the map.
+        */
+        static void handlePart(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels);
+
     private:
 
         // Utility class only: no instance should ever be created.

@@ -22,6 +22,7 @@ SRCS_FILES	= main.cpp \
 			  commands/Kick.cpp \
 			  commands/Mode.cpp \
 			  commands/Nick.cpp \
+			  commands/Part.cpp \
 			  commands/Pass.cpp \
 			  commands/PrivMsg.cpp \
 			  commands/Topic.cpp \

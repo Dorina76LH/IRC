@@ -6,6 +6,7 @@ test_channel
 test_commands
 test_join
 test_topic
+test_part
 
 # Object files
 obj/
