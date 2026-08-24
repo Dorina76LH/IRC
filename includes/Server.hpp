@@ -3,6 +3,7 @@
 #include "Client.hpp"
 #include "Channel.hpp"
 #include "Commands.hpp"
+#include "Parser.hpp"
 #include <unistd.h>
 #include <iostream>
 #include <string>
