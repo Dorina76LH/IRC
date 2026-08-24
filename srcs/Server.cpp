@@ -218,3 +218,25 @@ Client* Server::getClientByNickname(const std::string& nickname)
 	}
 	return NULL;
 }
+
+// void Server::processClientMessage(Client* client, const std::string& line)
+// {
+// 	ParsedCommand cmd = Parser::parse(line); 
+
+// 	if (cmd.name.empty())
+// 		return;
+
+// 	if (cmd.name == "PASS")
+// 		Commands::handlePass(this, client, cmd.params);
+// 	else if (cmd.name == "NICK")
+// 		Commands::handleNick(this, client, cmd.params);
+// 	else if (cmd.name == "USER")
+// 		Commands::handleUser(this, client, cmd.params);
+// 	else if (cmd.name == "JOIN")
+// 		Commands::handleJoin(this, client, cmd.params);
+// 	else if (cmd.name == "PRIVMSG")
+// 		Commands::handlePrivmsg(this, client, cmd.params);
+// 	else
+// 	{
+// 	}
+// }
