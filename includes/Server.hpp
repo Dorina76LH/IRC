@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Client.hpp"
+#include "Channel.hpp"
+#include "Commands.hpp"
 #include <unistd.h>
 #include <iostream>
 #include <string>
@@ -33,6 +35,8 @@ class Server
 		void disconnectClient(size_t index);
 		bool receiveData(int fd, size_t index);
 		Client* getClientByNickname(const std::string &nickname);
+		void processClientMessage(Client* client, const std::string& line);
+		std::vector<std::string> getAllNicknames() const;
 	public:
 		Server(int port, const std::string &password);
 		~Server();

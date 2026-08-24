@@ -219,24 +219,49 @@ Client* Server::getClientByNickname(const std::string& nickname)
 	return NULL;
 }
 
-// void Server::processClientMessage(Client* client, const std::string& line)
-// {
-// 	ParsedCommand cmd = Parser::parse(line); 
+std::vector<std::string> Server::getAllNicknames() const
+{
+	std::vector<std::string> nicknames;
+	for (std::map<int, Client*>::const_iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		if (it->second && !it->second->getNickname().empty())
+			nicknames.push_back(it->second->getNickname());
+	}
+	return nicknames;
+}
 
-// 	if (cmd.name.empty())
-// 		return;
+void Server::processClientMessage(Client* client, const std::string& line)
+{
+	if (!client || line.empty())
+		return;
 
-// 	if (cmd.name == "PASS")
-// 		Commands::handlePass(this, client, cmd.params);
-// 	else if (cmd.name == "NICK")
-// 		Commands::handleNick(this, client, cmd.params);
-// 	else if (cmd.name == "USER")
-// 		Commands::handleUser(this, client, cmd.params);
-// 	else if (cmd.name == "JOIN")
-// 		Commands::handleJoin(this, client, cmd.params);
-// 	else if (cmd.name == "PRIVMSG")
-// 		Commands::handlePrivmsg(this, client, cmd.params);
-// 	else
-// 	{
-// 	}
-// }
+	std::string command;
+	std::vector<std::string> params;
+
+	Parser::parseLine(line, command, params);
+
+	if (command.empty())
+		return;
+
+	if (command == "PASS")
+		Commands::handlePass(*client, params, _password);
+	else if (command == "NICK")
+	{
+		std::vector<std::string> activeNicknames = getAllNicknames();
+		Commands::handleNick(*client, params, activeNicknames);
+	}
+	else if (command == "USER")
+		Commands::handleUser(*client, params);
+	// else if (command == "JOIN")
+	// 	Commands::handleJoin(*client, params);
+	// else if (command == "PRIVMSG")
+	// 	Commands::handlePrivmsg(*client, params);
+	// else if (command == "KICK")
+	// 	Commands::handleKick(*client, params);
+	// else if (command == "INVITE")
+	// 	Commands::handleInvite(*client, params);
+	// else if (command == "TOPIC")
+	// 	Commands::handleTopic(*client, params);
+	// else if (command == "MODE")
+	// 	Commands::handleMode(*client, params);
+}
