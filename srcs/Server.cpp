@@ -129,14 +129,6 @@ bool Server::receiveData(int fd, size_t index)
 
 	client->appendToReadBuffer(std::string(buffer, bytesRead));
 
-	while (client->hasCompleteLine())
-	{
-		std::string line = client->extractLine();
-
-		std::cout << "Message received from (FD:" << fd << ") : " << line << std::endl;
-
-	}
-
 	return false;
 }
 
@@ -183,7 +175,22 @@ void Server::run()
 				if (fd == _fdServer)
 					acceptNewClient();
 				else
+				{
 					clientDisconnected = receiveData(fd, i);
+					if (!clientDisconnected)
+					{
+						Client* client = _clients[fd];
+						if (client)
+						{
+							while (client->hasCompleteLine())
+							{
+								std::string line = client->extractLine();
+								processClientMessage(client, line);
+								std::cout << "Message received from (FD:" << fd << ") : " << line << std::endl;
+							}
+						}
+					}
+				}
 			}
 
 			// POLLIN  = 0000 0001 (valeur 1) = Données prete a etre lu
@@ -244,14 +251,21 @@ void Server::processClientMessage(Client* client, const std::string& line)
 		return;
 
 	if (command == "PASS")
+	{
+		std::cout << "PASS command detected" << std::endl;
 		Commands::handlePass(*client, params, _password);
+	}
 	else if (command == "NICK")
 	{
+		std::cout << "NICK command detected" << std::endl;
 		std::vector<std::string> activeNicknames = getAllNicknames();
 		Commands::handleNick(*client, params, activeNicknames);
 	}
 	else if (command == "USER")
+	{
+		std::cout << "USER command detected" << std::endl;
 		Commands::handleUser(*client, params);
+	}
 	// else if (command == "JOIN")
 	// 	Commands::handleJoin(*client, params);
 	// else if (command == "PRIVMSG")
