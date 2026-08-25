@@ -38,6 +38,7 @@ class Server
 		Client* getClientByNickname(const std::string &nickname);
 		void processClientMessage(Client* client, const std::string& line);
 		std::vector<std::string> getAllNicknames() const;
+		void sendData(int fd, size_t index);
 	public:
 		Server(int port, const std::string &password);
 		~Server();

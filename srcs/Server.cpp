@@ -132,13 +132,34 @@ bool Server::receiveData(int fd, size_t index)
 	return false;
 }
 
+void Server::sendData(int fd, size_t index)
+{
+	Client* client = _clients[fd];
+	if (!client)
+		return;
+
+	const std::string& buffer = client->getWriteBuffer();
+	if (buffer.empty())
+		return;
+
+	ssize_t bytesSent = send(fd, buffer.c_str(), buffer.size(), 0);
+	if (bytesSent < 0)
+	{
+		std::cerr << "Error : send() on FD " << fd << std::endl;
+		disconnectClient(index);
+		return;
+	}
+
+	client->clearSentData(bytesSent);
+}
+
 void Server::run()
 {
 	if (_pollfds.empty())
 	{
 		struct pollfd serverPfd;
 		serverPfd.fd = _fdServer;
-		serverPfd.events = POLLIN; // = 1 = y'a t'il des donnée a lire, si oui le dire dans revents
+		serverPfd.events = POLLIN; // = 1 = y'a t'il des données a lire, si oui le dire dans revents
 		serverPfd.revents = 0;
 		_pollfds.push_back(serverPfd);
 	}
@@ -146,7 +167,16 @@ void Server::run()
 	std::cout << "Server running..." << std::endl;
 	while (g_running)
 	{
-		int ret = poll(_pollfds.data(), _pollfds.size(), -1); // quels fds ecouter, -1 = attend indefiniment
+		for (size_t i = 1; i < _pollfds.size(); i++)
+		{
+			Client* client = _clients[_pollfds[i].fd];
+			if (client && client->hasDataToSend())
+				_pollfds[i].events = POLLIN | POLLOUT;
+			else
+				_pollfds[i].events = POLLIN;
+		}
+
+		int ret = poll(_pollfds.data(), _pollfds.size(), -1); // -1 = attente infinie
 		if (ret == -1)
 		{
 			if (!g_running)
@@ -168,49 +198,55 @@ void Server::run()
 			if (revents == 0)
 				continue;
 
-			bool clientDisconnected = false;
 
-			if (revents & POLLIN) // nouvelle connexion / données entrantes
+			// POLLIN  = 0000 0001 (valeur 1) = Données prete a etre lu
+			// POLLOUT = 0000 0100 (valeur 4) = Socket prêt pour l'écriture
+			// POLLERR = 0000 1000 (valeur 8) = Erreur systeme s'est produite
+			// POLLHUP = 0001 0000 (valeur 16) = le client a fermé de son coté
+			// POLLNVAL = 0010 0000 (valeur 32) = Descripteur invalide
+			if (revents & (POLLERR | POLLHUP | POLLNVAL))
+			{
+				if (fd == _fdServer)
+					throw std::runtime_error("Error : POLLERR on server socket");
+
+				disconnectClient(i);
+				i--;
+				current_size--;
+				continue;
+			}
+
+			// Gérer la lecture (POLLIN)
+			if (revents & POLLIN)
 			{
 				if (fd == _fdServer)
 					acceptNewClient();
 				else
 				{
-					clientDisconnected = receiveData(fd, i);
-					if (!clientDisconnected)
+					bool clientDisconnected = receiveData(fd, i);
+					if (clientDisconnected)
 					{
-						Client* client = _clients[fd];
-						if (client)
+						i--;
+						current_size--;
+						continue; // Si le client a été supprimé, pas de POLLOUT possible
+					}
+
+					Client* client = _clients[fd];
+					if (client)
+					{
+						while (client->hasCompleteLine())
 						{
-							while (client->hasCompleteLine())
-							{
-								std::string line = client->extractLine();
-								processClientMessage(client, line);
-								std::cout << "Message received from (FD:" << fd << ") : " << line << std::endl;
-							}
+							std::string line = client->extractLine();
+							processClientMessage(client, line);
+							std::cout << "Message received from (FD:" << fd << ") : " << line << std::endl;
 						}
 					}
 				}
 			}
 
-			// POLLIN  = 0000 0001 (valeur 1) = Données prete a etre lu
-			// POLLERR = 0000 1000 (valeur 8) = Erreur systeme s'est produite
-			// POLLHUP = 0001 0000 (valeur 16) = le client a fermé de son coté
-			// POLLNVAL = 0010 0000 (valeur 32) = Descripteur invalide
-			if (!clientDisconnected && (revents & (POLLERR | POLLHUP | POLLNVAL))) // (| = OU binaire) (& = ET binaire)
+			// Gérer l'écriture (POLLOUT)
+			if (revents & POLLOUT)
 			{
-				if (fd == _fdServer)
-					throw std::runtime_error("Error : POLLERR");
-				else
-				{
-					disconnectClient(i);
-					clientDisconnected = true;
-				}
-			}
-			if (clientDisconnected)
-			{
-				i--;
-				current_size--;
+				sendData(fd, i);
 			}
 		}
 	}
