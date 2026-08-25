@@ -288,18 +288,15 @@ void Server::processClientMessage(Client* client, const std::string& line)
 
 	if (command == "PASS")
 	{
-		std::cout << "PASS command detected" << std::endl;
 		Commands::handlePass(*client, params, _password);
 	}
 	else if (command == "NICK")
 	{
-		std::cout << "NICK command detected" << std::endl;
 		std::vector<std::string> activeNicknames = getAllNicknames();
 		Commands::handleNick(*client, params, activeNicknames);
 	}
 	else if (command == "USER")
 	{
-		std::cout << "USER command detected" << std::endl;
 		Commands::handleUser(*client, params);
 	}
 	// else if (command == "JOIN")
