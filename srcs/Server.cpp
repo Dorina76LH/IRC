@@ -273,6 +273,19 @@ std::vector<std::string> Server::getAllNicknames() const
 	return nicknames;
 }
 
+void Server::finalizeRegistrationIfReady(Client* client)
+{
+	if (!client || client->isRegistered())
+		return;
+
+	if (!client->isAuthenticated() || client->getNickname().empty() || client->getUsername().empty())
+		return;
+
+	client->setRegistered(true);
+	client->appendToWriteBuffer(Commands::buildReply("001", client->getNickname(),
+		"Welcome to the Internet Relay Network " + client->getNickname()));
+}
+
 void Server::processClientMessage(Client* client, const std::string& line)
 {
 	if (!client || line.empty())
@@ -294,10 +307,12 @@ void Server::processClientMessage(Client* client, const std::string& line)
 	{
 		std::vector<std::string> activeNicknames = getAllNicknames();
 		Commands::handleNick(*client, params, activeNicknames);
+		finalizeRegistrationIfReady(client);
 	}
 	else if (command == "USER")
 	{
 		Commands::handleUser(*client, params);
+		finalizeRegistrationIfReady(client);
 	}
 	// else if (command == "JOIN")
 	// 	Commands::handleJoin(*client, params);
