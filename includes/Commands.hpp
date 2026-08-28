@@ -73,6 +73,24 @@ class Commands
         static void handleJoin(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels);
 
         /*
+        Handles the INVITE command (RFC 1459).
+        Command : INVITE <nickname> <channel>
+        client : the client who sent the INVITE command
+        commandParams : the parameters that followed "INVITE"
+        (commandParams[0] = nickname of the client to invite, commandParams[1] = channel name)
+        channels : all channels known to the server, keyed by channel name.
+        clients : every client currently connected to the server, keyed by fd socket.
+        */
+        static void handleInvite(Client &client, const std::vector<std::string> &commandParams,
+                     std::map<std::string, Channel *> &channels, std::map<int, Client *> &clients);
+        
+        /*
+        Handles the KICK command (RFC 1459).
+        */
+        // static void handleKick(Client &client, const std::vector<std::string> &commandParams,
+        //                std::map<std::string, Channel *> &channels, std::map<int, Client *> &clients);
+
+        /*
         Handles the TOPIC command (RFC 1459).
         client : the client who sent the TOPIC command
         commandParams : the parameters that followed "TOPIC"
