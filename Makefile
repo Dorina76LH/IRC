@@ -17,6 +17,7 @@ SRCS_FILES	= main.cpp \
               Client.cpp \
 			  Server.cpp \
 			  Channel.cpp \
+			  Parser.cpp \
 			  commands/Invite.cpp \
 			  commands/Join.cpp \
 			  commands/Kick.cpp \
