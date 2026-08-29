@@ -32,11 +32,23 @@ static void clearChannels(std::map<std::string, Channel *> &channels)
 
 int main()
 {
+    // Security : TOPIC avant que le client ne soit enregistre (451)
+    {
+        std::map<std::string, Channel *> channels;
+        Client client(0);
+
+        Commands::handleTopic(client, makeParams("#general"), channels);
+        assert(client.getWriteBuffer().find(" 451 ") != std::string::npos);
+        clearChannels(channels);
+    }
+    std::cout << "0. TOPIC before registration rejected with 451." << std::endl;
+
     // 1. TOPIC sans parametre : 461
     {
         std::map<std::string, Channel *> channels;
         Client client(1);
         client.setNickname("ada");
+        client.setRegistered(true);
 
         Commands::handleTopic(client, std::vector<std::string>(), channels);
         assert(client.getWriteBuffer().find(" 461 ") != std::string::npos);
@@ -49,6 +61,7 @@ int main()
         std::map<std::string, Channel *> channels;
         Client client(2);
         client.setNickname("ada");
+        client.setRegistered(true);
 
         Commands::handleTopic(client, makeParams("#ghost"), channels);
         assert(client.getWriteBuffer().find(" 403 ") != std::string::npos);
@@ -61,10 +74,12 @@ int main()
         std::map<std::string, Channel *> channels;
         Client clientA(3);
         clientA.setNickname("ada");
+        clientA.setRegistered(true);
         Commands::handleJoin(clientA, makeParams("#general"), channels);
 
         Client clientB(4);
         clientB.setNickname("bob");
+        clientB.setRegistered(true);
         Commands::handleTopic(clientB, makeParams("#general"), channels);
         assert(clientB.getWriteBuffer().find(" 442 ") != std::string::npos);
         clearChannels(channels);
@@ -76,6 +91,7 @@ int main()
         std::map<std::string, Channel *> channels;
         Client client(5);
         client.setNickname("ada");
+        client.setRegistered(true);
         Commands::handleJoin(client, makeParams("#general"), channels);
         client.appendToWriteBuffer(""); // vide le buffer JOIN pour lire la reponse suivante seule
         std::string bufferBeforeTopic = client.getWriteBuffer();
@@ -92,6 +108,7 @@ int main()
         std::map<std::string, Channel *> channels;
         Client client(6);
         client.setNickname("ada");
+        client.setRegistered(true);
         Commands::handleJoin(client, makeParams("#general"), channels);
 
         Commands::handleTopic(client, makeParams("#general", "Nouveau sujet"), channels);
@@ -105,6 +122,7 @@ int main()
         std::map<std::string, Channel *> channels;
         Client client(7);
         client.setNickname("ada");
+        client.setRegistered(true);
         Commands::handleJoin(client, makeParams("#general"), channels);
         Commands::handleTopic(client, makeParams("#general", "Sujet existant"), channels);
 
@@ -122,11 +140,13 @@ int main()
         std::map<std::string, Channel *> channels;
         Client clientA(8);
         clientA.setNickname("ada");
+        clientA.setRegistered(true);
         Commands::handleJoin(clientA, makeParams("#general"), channels);
         channels["#general"]->setTopicRestricted(true);
 
         Client clientB(9);
         clientB.setNickname("bob");
+        clientB.setRegistered(true);
         Commands::handleJoin(clientB, makeParams("#general"), channels);
 
         Commands::handleTopic(clientB, makeParams("#general", "Tentative"), channels);
@@ -141,6 +161,7 @@ int main()
         std::map<std::string, Channel *> channels;
         Client client(10);
         client.setNickname("ada");
+        client.setRegistered(true);
         Commands::handleJoin(client, makeParams("#general"), channels); // ada = createur = operateur
         channels["#general"]->setTopicRestricted(true);
 
@@ -155,6 +176,7 @@ int main()
         std::map<std::string, Channel *> channels;
         Client client(11);
         client.setNickname("ada");
+        client.setRegistered(true);
         Commands::handleJoin(client, makeParams("#general"), channels);
         Commands::handleTopic(client, makeParams("#general", "Sujet a effacer"), channels);
 
@@ -169,10 +191,12 @@ int main()
         std::map<std::string, Channel *> channels;
         Client clientA(12);
         clientA.setNickname("ada");
+        clientA.setRegistered(true);
         Commands::handleJoin(clientA, makeParams("#general"), channels);
 
         Client clientB(13);
         clientB.setNickname("bob");
+        clientB.setRegistered(true);
         Commands::handleJoin(clientB, makeParams("#general"), channels);
 
         std::string bufferBeforeTopic = clientB.getWriteBuffer();

@@ -75,6 +75,12 @@ void Commands::handlePrivMsg(Client &client, const std::vector<std::string> &com
 {
     std::string replyTarget = client.getNickname().empty() ? "*" : client.getNickname();
 
+    if (!client.isRegistered())
+    {
+        client.appendToWriteBuffer(Commands::buildReply("451", replyTarget, "You have not registered"));
+        return;
+    }
+
     if (commandParams.empty() || commandParams[0].empty())
     {
         client.appendToWriteBuffer(Commands::buildReply("411", replyTarget, "No recipient given (PRIVMSG)"));
