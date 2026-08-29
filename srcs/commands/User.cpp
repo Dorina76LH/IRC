@@ -12,6 +12,12 @@ void Commands::handleUser(Client &client, const std::vector<std::string> &comman
         return;
     }
 
+    if (!client.isAuthenticated())
+    {
+        client.appendToWriteBuffer(Commands::buildReply("451", replyTarget, "You have not registered"));
+        return;
+    }
+
     // <username> <hostname> <servername> <realname>
     if (commandParams.size() < 4 || commandParams[0].empty() || commandParams[3].empty())
     {
