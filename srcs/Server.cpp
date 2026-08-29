@@ -324,6 +324,8 @@ void Server::processClientMessage(Client* client, const std::string& line)
 		Commands::handleUser(*client, params);
 		finalizeRegistrationIfReady(client);
 	}
+	else if (command == "MODE")
+		Commands::handleMode(*client, params);
 	// else if (command == "JOIN")
 	// 	Commands::handleJoin(*client, params);
 	// else if (command == "PRIVMSG")
@@ -334,8 +336,6 @@ void Server::processClientMessage(Client* client, const std::string& line)
 	// 	Commands::handleInvite(*client, params);
 	// else if (command == "TOPIC")
 	// 	Commands::handleTopic(*client, params);
-	// else if (command == "MODE")
-	// 	Commands::handleMode(*client, params);
 	else
 	{
 		std::string target = client->getNickname().empty() ? "*" : client->getNickname(); // Nickname si existe, sinon * (RFC 1459)

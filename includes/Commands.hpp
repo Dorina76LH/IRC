@@ -57,6 +57,11 @@ class Commands
         */
         static void handleUser(Client &client, const std::vector<std::string> &commandParams);
 
+		/*
+        Handles the MODE command (RFC 2812).
+        */
+        static void handleMode(Client &client, const std::vector<std::string> &commandParams);
+
     private:
 
         // Utility class only: no instance should ever be created.
