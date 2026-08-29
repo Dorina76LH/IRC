@@ -20,6 +20,7 @@
 #define ERR_NOTREGISTERED "451"
 #define ERR_NEEDMOREPARAMS "461"
 #define ERR_ALREADYREGISTRED "462"
+#define ERR_BADCHANMASK "476"
 #define ERR_CHANOPRIVSNEEDED "482"
 
 // --- Standard errors ---
@@ -31,6 +32,7 @@
 #define MSG_NOTREGISTERED "You have not registered"
 #define MSG_NEEDMOREPARAMS "Not enough parameters"
 #define MSG_ALREADYREGISTRED "You may not reregister"
+#define MSG_BADCHANMASK "Bad Channel Mask"
 #define MSG_CHANOPRIVSNEEDED "You're not channel operator"
 
 class Channel;
@@ -113,9 +115,15 @@ class Commands
         
         /*
         Handles the KICK command (RFC 1459).
+        Command : KICK <channel> <user> [<comment>]
+        client : the client who sent the KICK command
+        commandParams : the parameters that followed "KICK"
+        (commandParams[0] = channel name, commandParams[1] = nickname of the client to kick, commandParams[2] = optional comment)
+        channels : all channels known to the server, keyed by channel name.
+        clients : every client currently connected to the server, keyed by fd socket.
         */
-        // static void handleKick(Client &client, const std::vector<std::string> &commandParams,
-        //                std::map<std::string, Channel *> &channels, std::map<int, Client *> &clients);
+        static void handleKick(Client &client, const std::vector<std::string> &commandParams,
+                       std::map<std::string, Channel *> &channels, std::map<int, Client *> &clients);
 
         /*
         Handles the TOPIC command (RFC 1459).

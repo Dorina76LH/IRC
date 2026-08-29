@@ -134,6 +134,3 @@ void Commands::handleInvite(Client &client, const std::vector<std::string> &comm
     std::string inviteNotice = ":" + prefix + " INVITE " + targetClient->getNickname() + " :" + channelName + "\r\n";
     targetClient->appendToWriteBuffer(inviteNotice);
 }
-
-
-
