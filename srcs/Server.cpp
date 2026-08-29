@@ -238,7 +238,17 @@ void Server::run()
 							std::string line = client->extractLine();
 							processClientMessage(client, line);
 							std::cout << "Message received from (FD:" << fd << ") : " << line << std::endl;
+							// if (client->shouldDisconnect()) // si le client s'est déconnecté via QUIT on stop immédiatement
+							// 	break;
 						}
+
+						// if (client->shouldDisconnect())
+						// {
+						// 	disconnectClient(i);
+						// 	i--;
+						// 	current_size--;
+						// 	continue;
+						// }
 					}
 				}
 			}
@@ -326,4 +336,9 @@ void Server::processClientMessage(Client* client, const std::string& line)
 	// 	Commands::handleTopic(*client, params);
 	// else if (command == "MODE")
 	// 	Commands::handleMode(*client, params);
+	else
+	{
+		std::string target = client->getNickname().empty() ? "*" : client->getNickname(); // Nickname si existe, sinon * (RFC 1459)
+		client->appendToWriteBuffer(Commands::buildReply("421", target, command, "Unknown command"));
+	}
 }
