@@ -1,10 +1,37 @@
 #ifndef COMMANDS_HPP
 #define COMMANDS_HPP
 
+// --- INCLUDES ---
 #include <string>
 #include <vector>
 #include <map>
 #include "Client.hpp"
+
+// --- NUMERIC REPLIES ---
+#define RPL_INVITING "341"
+#define HOSTNAME "localhost"
+
+// --- ERROR REPLIES ---
+#define ERR_NOSUCHNICK "401"
+#define ERR_NOSUCHCHANNEL "403"
+#define ERR_UNKNOWNCOMMAND "421"
+#define ERR_NOTONCHANNEL "442"
+#define ERR_USERONCHANNEL "443"
+#define ERR_NOTREGISTERED "451"
+#define ERR_NEEDMOREPARAMS "461"
+#define ERR_ALREADYREGISTRED "462"
+#define ERR_CHANOPRIVSNEEDED "482"
+
+// --- Standard errors ---
+#define MSG_NOSUCHNICK "No such nick/channel"
+#define MSG_NOSUCHCHANNEL "No such channel"
+#define MSG_UNKNOWNCOMMAND "Unknown command"
+#define MSG_NOTONCHANNEL "You're not on that channel"
+#define MSG_USERONCHANNEL "is already on channel"
+#define MSG_NOTREGISTERED "You have not registered"
+#define MSG_NEEDMOREPARAMS "Not enough parameters"
+#define MSG_ALREADYREGISTRED "You may not reregister"
+#define MSG_CHANOPRIVSNEEDED "You're not channel operator"
 
 class Channel;
 

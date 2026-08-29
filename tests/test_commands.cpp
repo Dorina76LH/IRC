@@ -1,5 +1,8 @@
 //* -- Includes -- *//
 #include "../includes/Commands.hpp"
+#include "../includes/Client.hpp"
+#include "../includes/Channel.hpp"
+#include <map>
 #include <iostream>
 #include <cassert>
 
@@ -9,7 +12,7 @@
 #define COLOR_GREEN "\033[1;32m"
 
 //* -- Compilation and Execution Instructions -- *//
-// c++ -std=c++98 -Wall -Wextra -Werror tests/test_commands.cpp srcs/Client.cpp srcs/commands/Pass.cpp srcs/commands/Nick.cpp srcs/commands/User.cpp -o test_commands
+// c++ -std=c++98 -Wall -Wextra -Werror tests/test_commands.cpp srcs/Client.cpp srcs/commands/Pass.cpp srcs/commands/Nick.cpp srcs/commands/User.cpp srcs/commands/Invite.cpp srcs/Channel.cpp -o test_commands
 
 //& assert(condition) : if condition is false, the program aborts immediately
 //& and prints the failing condition, file, and line number to stderr.
@@ -20,6 +23,14 @@ static std::vector<std::string> makeParams(const std::string &p0)
 {
     std::vector<std::string> params;
     params.push_back(p0);
+    return (params);
+}
+
+static std::vector<std::string> makeParams(const std::string &p0, const std::string &p1)
+{
+    std::vector<std::string> params;
+    params.push_back(p0);
+    params.push_back(p1);
     return (params);
 }
 
@@ -272,5 +283,96 @@ int main()
 
     std::cout << COLOR_GREEN << "\nAll full authentication flow tests passed!" << COLOR_RESET << std::endl;
 
+    std::cout << COLOR_GREEN << "\n==================================================" << std::endl;
+    std::cout << "INVITE COMMAND TESTS" << std::endl;
+    std::cout << "==================================================\n" << COLOR_RESET << std::endl;
+
+    // Instanciation des conteneurs requis par handleInvite
+    std::map<std::string, Channel *> channels;
+    std::map<int, Client *> clients;
+
+    // Création du client émetteur (Alice)
+    Client alice(100);
+    alice.setAuthenticated(true);
+    alice.setRegistered(true);
+    alice.setNickname("Alice");
+    alice.setUsername("alice_user");
+    clients[alice.getFdSocket()] = &alice;
+
+    // Création du client cible (Bob)
+    Client bob(101);
+    bob.setAuthenticated(true);
+    bob.setRegistered(true);
+    bob.setNickname("Bob");
+    bob.setUsername("bob_user");
+    clients[bob.getFdSocket()] = &bob;
+
+    // 1. Test ERR_NEEDMOREPARAMS (461)
+    std::cout << COLOR_CYAN << "=== Testing INVITE with not enough parameters ===" << COLOR_RESET << std::endl;
+    Commands::handleInvite(alice, makeParams("Bob"), channels, clients);
+    assert(alice.getWriteBuffer().find(" 461 ") != std::string::npos);
+    alice.clearSentData(alice.getWriteBuffer().size()); // Option 2 : vidage via clearSentData
+    std::cout << "✅ Missing parameters rejected with 461." << std::endl;
+
+    // 2. Test ERR_NOSUCHNICK (401)
+    std::cout << COLOR_CYAN << "\n=== Testing INVITE with unknown target nickname ===" << COLOR_RESET << std::endl;
+    Commands::handleInvite(alice, makeParams("UnknownUser", "#general"), channels, clients);
+    assert(alice.getWriteBuffer().find(" 401 ") != std::string::npos);
+    alice.clearSentData(alice.getWriteBuffer().size());
+    std::cout << "✅ Unknown nickname rejected with 401." << std::endl;
+
+    // 3. Test ERR_NOSUCHCHANNEL (403)
+    std::cout << COLOR_CYAN << "\n=== Testing INVITE on non-existent channel ===" << COLOR_RESET << std::endl;
+    Commands::handleInvite(alice, makeParams("Bob", "#nonexistent"), channels, clients);
+    assert(alice.getWriteBuffer().find(" 403 ") != std::string::npos);
+    alice.clearSentData(alice.getWriteBuffer().size());
+    std::cout << "✅ Non-existent channel rejected with 403." << std::endl;
+
+    // Création d'un canal réel pour la suite des tests
+    Channel genChannel("#general");
+    channels["#general"] = &genChannel;
+
+    // 4. Test ERR_NOTONCHANNEL (442)
+    std::cout << COLOR_CYAN << "\n=== Testing INVITE when inviter is not on channel ===" << COLOR_RESET << std::endl;
+    Commands::handleInvite(alice, makeParams("Bob", "#general"), channels, clients);
+    assert(alice.getWriteBuffer().find(" 442 ") != std::string::npos);
+    alice.clearSentData(alice.getWriteBuffer().size());
+    std::cout << "✅ Inviter not on channel rejected with 442." << std::endl;
+
+    // On ajoute Alice au canal (passage du pointeur &alice)
+    genChannel.addMember(&alice);
+
+    // 5. Test ERR_USERONCHANNEL (443)
+    std::cout << COLOR_CYAN << "\n=== Testing INVITE when target is already on channel ===" << COLOR_RESET << std::endl;
+    genChannel.addMember(&bob); // Bob est déjà dessus (passage du pointeur &bob)
+    Commands::handleInvite(alice, makeParams("Bob", "#general"), channels, clients);
+    assert(alice.getWriteBuffer().find(" 443 ") != std::string::npos);
+    alice.clearSentData(alice.getWriteBuffer().size());
+    genChannel.removeMember(bob.getFdSocket()); // On retire Bob pour la suite
+    std::cout << "✅ Target already on channel rejected with 443." << std::endl;
+
+    // 6. Test ERR_CHANOPRIVSNEEDED (482)
+    std::cout << COLOR_CYAN << "\n=== Testing INVITE on invite-only channel without operator status ===" << COLOR_RESET << std::endl;
+    genChannel.setInviteOnly(true); // Canal en mode +i
+    Commands::handleInvite(alice, makeParams("Bob", "#general"), channels, clients);
+    assert(alice.getWriteBuffer().find(" 482 ") != std::string::npos);
+    alice.clearSentData(alice.getWriteBuffer().size());
+    std::cout << "✅ Non-operator invite on +i channel rejected with 482." << std::endl;
+
+    // 7. Test de SUCCÈS complet
+    std::cout << COLOR_CYAN << "\n=== Testing successful INVITE execution ===" << COLOR_RESET << std::endl;
+    genChannel.addOperator(alice.getFdSocket()); // Alice devient opératrice
+    Commands::handleInvite(alice, makeParams("Bob", "#general"), channels, clients);
+
+    // Vérification de la confirmation RPL_INVITING (341) chez Alice
+    assert(alice.getWriteBuffer().find(" 341 ") != std::string::npos);
+    assert(alice.getWriteBuffer().find("Alice Bob #general") != std::string::npos);
+
+    // Vérification de la notification INVITE envoyée à Bob
+    assert(bob.getWriteBuffer().find("INVITE Bob :#general") != std::string::npos);
+
+    std::cout << "✅ Successful INVITE sends 341 to inviter and notification to target." << std::endl;
+    std::cout << COLOR_GREEN << "\nAll INVITE command tests passed!" << COLOR_RESET << std::endl;
+    
     return 0;
 }
