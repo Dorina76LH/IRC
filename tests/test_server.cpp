@@ -42,11 +42,54 @@ static void testBufferAndParser()
 }
 
 // -------------------------------------------------------------
-// 2. TESTS DES COMMANDES DU SERVEUR
+// 2. TEST DU BUFFER MULTI-COMMANDES
+// -------------------------------------------------------------
+static void testMultiCommandBuffer()
+{
+	std::cout << "[2/3] Test du buffer multi-commandes (un seul recv())..." << std::endl;
+
+	// Deux commandes completes recues en un seul appel a appendToReadBuffer,
+	// pour simuler un seul recv() ramenant plusieurs lignes IRC d'un coup.
+	{
+		Client client(4);
+		client.appendToReadBuffer("NICK Bob\r\nUSER art 0 * :Bob Michel\r\n");
+
+		assert(client.hasCompleteLine() == true);
+		assert(client.extractLine() == "NICK Bob");
+
+		assert(client.hasCompleteLine() == true);
+		assert(client.extractLine() == "USER art 0 * :Bob Michel");
+
+		assert(client.hasCompleteLine() == false);
+	}
+
+	// Meme scenario, mais en verifiant que le dispatcher traite bien
+	// les deux commandes extraites l'une apres l'autre, dans l'ordre.
+	{
+		Server server(6667, "secretpass");
+		Client client(4);
+
+		server.processClientMessage(&client, "PASS secretpass");
+		assert(client.isAuthenticated() == true);
+
+		client.appendToReadBuffer("NICK Bob\r\nUSER art 0 * :Bob Michel\r\n");
+		while (client.hasCompleteLine())
+			server.processClientMessage(&client, client.extractLine());
+
+		assert(client.getNickname() == "Bob");
+		assert(client.getUsername() == "art");
+		assert(client.isRegistered() == true);
+	}
+
+	std::cout << "  -> Extraction consecutive OK !" << std::endl;
+}
+
+// -------------------------------------------------------------
+// 3. TESTS DES COMMANDES DU SERVEUR
 // -------------------------------------------------------------
 static void testCommandsExecution()
 {
-	std::cout << "[2/2] Test de l'execution des commandes IRC..." << std::endl;
+	std::cout << "[3/3] Test de l'execution des commandes IRC..." << std::endl;
 
 	Server server(6667, "secretpass");
 	Client client(4);
@@ -105,6 +148,7 @@ int main()
 	std::cout << "=== SUITE DE TESTS SERVEUR IRC ===" << std::endl;
 
 	testBufferAndParser();
+	testMultiCommandBuffer();
 	testCommandsExecution();
 
 	std::cout << "✅ TOUS LES TESTS ASSERTS SONT VALIDÉS !" << std::endl;
