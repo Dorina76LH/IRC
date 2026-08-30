@@ -6,7 +6,7 @@
 /*   By: doberes <doberes@student.42lehavre.fr>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/30 08:49:14 by doberes           #+#    #+#             */
-/*   Updated: 2026/08/30 11:32:20 by doberes          ###   ########.fr       */
+/*   Updated: 2026/08/30 14:15:33 by doberes          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,9 +51,9 @@ void Bot::printFooter(std::ostream &os)
     os  << COLOR_CYAN 
         << "\n===============================================\n"
         << "    ,___,\n"
-        << "    [O.o]  End of help. Have a nice IRC chat!\n"
-        << "    /)  )\n"
-        << " --\"--\"\n"
+        << "    [O.o]  End of help. \n"
+        << "    /)  )  Have a nice IRC chat!\n"
+        << "   --\"--\"\n"
         << "===============================================\n" 
         << COLOR_RESET << std::endl;
 }
