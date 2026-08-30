@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: doberes <doberes@student.42lehavre.fr>     +#+  +:+       +#+        */
+/*   By: asnothar <asnothar@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/15 19:08:52 by doberes           #+#    #+#             */
-/*   Updated: 2026/08/17 10:38:18 by doberes          ###   ########.fr       */
+/*   Updated: 2026/08/30 15:33:05 by asnothar         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,6 +71,12 @@ bool Client::isAuthenticated() const
     return (this->_isAuthenticated);
 }
 
+//? Check if the client is invisible
+bool Client::isInvisible() const
+{
+	return this->_isInvisible;
+}
+
 //? Get the read buffer
 const std::string & Client::getReadBuffer() const
 {
@@ -127,6 +133,12 @@ void Client::setRegistered(bool isRegistered)
 void Client::setAuthenticated(bool isAuthenticated)
 {
     this->_isAuthenticated = isAuthenticated;
+}
+
+//? Set the client's invisible status
+void Client::setInvisible(bool status)
+{
+	this->_isInvisible = status;
 }
 
 

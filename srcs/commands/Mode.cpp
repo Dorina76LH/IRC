@@ -49,8 +49,8 @@ void Commands::handleMode(Client &client, const std::vector<std::string> &comman
 			adding = true;
 		else if (flag == '-')
 			adding = false;
-		// else if (flag == 'i')
-		// 	client.setInvisible(adding); // besoin d'un setter dans Client.hpp
+		else if (flag == 'i')
+			client.setInvisible(adding); // besoin d'un setter dans Client.hpp
 		else
 		{
 			// Flag inconnu (472 ERR_UNKNOWNMODE)

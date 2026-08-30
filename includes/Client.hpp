@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: doberes <doberes@student.42lehavre.fr>     +#+  +:+       +#+        */
+/*   By: asnothar <asnothar@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/15 18:49:08 by doberes           #+#    #+#             */
-/*   Updated: 2026/08/17 12:52:42 by doberes          ###   ########.fr       */
+/*   Updated: 2026/08/30 15:29:03 by asnothar         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,6 +99,9 @@ class Client
         void    appendToWriteBuffer(const std::string &data);
         bool    hasDataToSend() const;
         void    clearSentData(size_t bytesSent);
+
+		void setInvisible(bool status);
+		bool isInvisible() const;
         
         private:
         
@@ -122,6 +125,9 @@ class Client
         //& Buffers for incoming and outgoing data
         std::string _readBuffer;        // incoming data buffer, read from socket
         std::string _writeBuffer;       // outgoing data buffer, to be sent to socket
+
+		// Client status
+		bool		_isInvisible;
 
         
 };
