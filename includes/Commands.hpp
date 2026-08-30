@@ -5,7 +5,8 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "Client.hpp"
+#include "../includes/Client.hpp"
+#include "../includes/Bot.hpp"
 
 // --- NUMERIC REPLIES ---
 #define RPL_INVITING "341"
@@ -159,7 +160,17 @@ class Commands
         Used to resolve a nickname target to the Client it belongs to.
         */
         static void handlePrivMsg(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels, std::map<int, Client *> &clients);
-
+        
+        /*
+        Handles the HELP command
+        client : the client who sent the HELP command
+        commandParams : the parameters that followed "HELP"
+        (commandParams[0] = optional command name to get help for, or empty to get a list of all commands)
+        bot : the bot instance, used to access the help map and print help messages
+        Used to provide help information to the client about available commands and their usage.
+        */
+        static void handleHelp(Client &client, const std::vector<std::string> &commandParams, Bot &bot);
+    
     private:
 
         // Utility class only: no instance should ever be created.

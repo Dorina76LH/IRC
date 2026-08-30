@@ -10,9 +10,10 @@
 #define COLOR_RESET "\033[0m"
 #define COLOR_CYAN  "\033[1;36m"
 #define COLOR_GREEN "\033[1;32m"
+#define COLOR_YELLOW "\033[1;33m"
 
 //* -- Compilation and Execution Instructions -- *//
-// c++ -std=c++98 -Wall -Wextra -Werror tests/test_commands.cpp srcs/Client.cpp srcs/commands/Pass.cpp srcs/commands/Nick.cpp srcs/commands/User.cpp srcs/commands/Invite.cpp srcs/Channel.cpp -o test_commands
+// c++ -std=c++98 -Wall -Wextra -Werror tests/test_commands.cpp srcs/Client.cpp srcs/commands/Pass.cpp srcs/commands/Nick.cpp srcs/commands/User.cpp srcs/commands/Invite.cpp srcs/commands/Help.cpp srcs/Channel.cpp srcs/Bot.cpp -o test_commands
 
 //& assert(condition) : if condition is false, the program aborts immediately
 //& and prints the failing condition, file, and line number to stderr.
@@ -374,5 +375,62 @@ int main()
     std::cout << "✅ Successful INVITE sends 341 to inviter and notification to target." << std::endl;
     std::cout << COLOR_GREEN << "\nAll INVITE command tests passed!" << COLOR_RESET << std::endl;
     
+    std::cout << COLOR_GREEN << "\n==================================================" << std::endl;
+    std::cout << "HELP COMMAND TESTS" << std::endl;
+    std::cout << "==================================================\n" << COLOR_RESET << std::endl;
+
+    Bot testBot;
+
+    // 1. Test HELP sans paramètre (Client non enregistré -> nickname fallback "*")
+    std::cout << COLOR_CYAN << "=== Testing HELP with no parameters (Unregistered Client) ===" << COLOR_RESET << std::endl;
+    Client helpClient1(200);
+    Commands::handleHelp(helpClient1, std::vector<std::string>(), testBot);
+
+    // Affichage visuel du message brut
+    std::cout << COLOR_YELLOW << "[RAW RESPONSE]:\n" << helpClient1.getWriteBuffer() << COLOR_RESET << std::endl;
+
+    assert(helpClient1.hasDataToSend());
+    assert(helpClient1.getWriteBuffer().find(":HelpBot!bot@localhost PRIVMSG * :") != std::string::npos);
+    assert(helpClient1.getWriteBuffer().find("AVAILABLE COMMANDS LIST") != std::string::npos);
+    assert(helpClient1.getWriteBuffer().find("End of help.") != std::string::npos);
+    helpClient1.clearSentData(helpClient1.getWriteBuffer().size());
+    std::cout << "✅ General help returned correctly with fallback nickname '*'." << std::endl;
+
+    // 2. Test HELP pour une commande spécifique (ex: "nick") avec casse mixte
+    std::cout << COLOR_CYAN << "\n=== Testing HELP NICK with lowercase parameter (Registered Client) ===" << COLOR_RESET << std::endl;
+    Client helpClient2(201);
+    helpClient2.setNickname("Charlie");
+    helpClient2.setRegistered(true);
+
+    Commands::handleHelp(helpClient2, makeParams("nick"), testBot);
+
+    // Affichage visuel du message brut
+    std::cout << COLOR_YELLOW << "[RAW RESPONSE]:\n" << helpClient2.getWriteBuffer() << COLOR_RESET << std::endl;
+
+    assert(helpClient2.hasDataToSend());
+    assert(helpClient2.getWriteBuffer().find(":HelpBot!bot@localhost PRIVMSG Charlie :") != std::string::npos);
+    assert(helpClient2.getWriteBuffer().find("=== Command NICK ===") != std::string::npos);
+    assert(helpClient2.getWriteBuffer().find("Sets or changes your nickname.") != std::string::npos);
+    helpClient2.clearSentData(helpClient2.getWriteBuffer().size());
+    std::cout << "✅ Specific command help (NICK) returned correctly with target nickname." << std::endl;
+
+    // 3. Test HELP pour une commande inconnue (ex: "LOL")
+    std::cout << COLOR_CYAN << "\n=== Testing HELP with unknown command ===" << COLOR_RESET << std::endl;
+    Client helpClient3(202);
+    helpClient3.setNickname("Dave");
+
+    Commands::handleHelp(helpClient3, makeParams("LOL"), testBot);
+
+    // Affichage visuel du message brut
+    std::cout << COLOR_YELLOW << "[RAW RESPONSE]:\n" << helpClient3.getWriteBuffer() << COLOR_RESET << std::endl;
+
+    assert(helpClient3.hasDataToSend());
+    assert(helpClient3.getWriteBuffer().find(":HelpBot!bot@localhost PRIVMSG Dave :") != std::string::npos);
+    assert(helpClient3.getWriteBuffer().find("Unknown command: LOL") != std::string::npos);
+    helpClient3.clearSentData(helpClient3.getWriteBuffer().size());
+    std::cout << "✅ Unknown command handled with clear error notice.\n" << std::endl;
+    
+    std::cout << COLOR_GREEN << "\nAll HELP command tests passed!\n" << COLOR_RESET << std::endl;
+
     return 0;
 }

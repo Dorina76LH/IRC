@@ -18,6 +18,8 @@ SRCS_FILES	= main.cpp \
 			  Server.cpp \
 			  Channel.cpp \
 			  Parser.cpp \
+			  Bot.cpp \
+			  commands/Help.cpp \
 			  commands/Invite.cpp \
 			  commands/Join.cpp \
 			  commands/Kick.cpp \
