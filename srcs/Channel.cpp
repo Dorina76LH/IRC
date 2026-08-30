@@ -39,6 +39,7 @@ void Channel::removeMember(int fdSocket)
 {
     _members.erase(fdSocket); // supprime, ne fait rien si absent
     _operators.erase(fdSocket);  // un membre qui part perd aussi son statut operateur
+    _invited.erase(fdSocket);  // et son statut d'invite, pour rester coherent si jamais reinvite plus tard
 }
 
 bool Channel::isMember(int fdSocket) const
