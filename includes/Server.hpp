@@ -1,11 +1,15 @@
 #pragma once
 
 #include "Client.hpp"
+#include "Channel.hpp"
+#include "Commands.hpp"
+#include "Parser.hpp"
 #include <unistd.h>
 #include <iostream>
 #include <string>
 #include <cstring>
 #include <cstdlib>
+#include <cctype>
 #include <vector>
 #include <map>
 #include <sys/socket.h>		// socket()
@@ -33,9 +37,13 @@ class Server
 		void disconnectClient(size_t index);
 		bool receiveData(int fd, size_t index);
 		Client* getClientByNickname(const std::string &nickname);
+		std::vector<std::string> getAllNicknames() const;
+		void sendData(int fd, size_t index);
+		void finalizeRegistrationIfReady(Client* client);
 	public:
 		Server(int port, const std::string &password);
 		~Server();
-
+		void processClientMessage(Client* client, const std::string& line);
+	
 		void run();
 };
