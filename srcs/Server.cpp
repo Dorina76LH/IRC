@@ -309,32 +309,40 @@ void Server::processClientMessage(Client* client, const std::string& line)
 	if (command.empty())
 		return;
 
-	if (command == "PASS")
+	// La RFC 1459 ne precise pas la casse attendue pour <command> : on tolere
+	// n'importe quelle casse en normalisant en majuscules pour le dispatch,
+	// sans modifier "command" (qui reste tel que recu, pour l'echo dans les
+	// erreurs comme 421). N'affecte pas irssi, qui envoie deja en majuscules.
+	std::string upperCommand = command;
+	for (size_t i = 0; i < upperCommand.size(); ++i)
+		upperCommand[i] = static_cast<char>(std::toupper(static_cast<unsigned char>(upperCommand[i])));
+
+	if (upperCommand == "PASS")
 	{
 		Commands::handlePass(*client, params, _password);
 	}
-	else if (command == "NICK")
+	else if (upperCommand == "NICK")
 	{
 		std::vector<std::string> activeNicknames = getAllNicknames();
 		Commands::handleNick(*client, params, activeNicknames);
 		finalizeRegistrationIfReady(client);
 	}
-	else if (command == "USER")
+	else if (upperCommand == "USER")
 	{
 		Commands::handleUser(*client, params);
 		finalizeRegistrationIfReady(client);
 	}
-	// else if (command == "JOIN")
+	// else if (upperCommand == "JOIN")
 	// 	Commands::handleJoin(*client, params);
-	// else if (command == "PRIVMSG")
+	// else if (upperCommand == "PRIVMSG")
 	// 	Commands::handlePrivmsg(*client, params);
-	// else if (command == "KICK")
+	// else if (upperCommand == "KICK")
 	// 	Commands::handleKick(*client, params);
-	// else if (command == "INVITE")
+	// else if (upperCommand == "INVITE")
 	// 	Commands::handleInvite(*client, params);
-	// else if (command == "TOPIC")
+	// else if (upperCommand == "TOPIC")
 	// 	Commands::handleTopic(*client, params);
-	// else if (command == "MODE")
+	// else if (upperCommand == "MODE")
 	// 	Commands::handleMode(*client, params);
 	else
 	{

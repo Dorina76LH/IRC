@@ -9,6 +9,7 @@
 #include <string>
 #include <cstring>
 #include <cstdlib>
+#include <cctype>
 #include <vector>
 #include <map>
 #include <sys/socket.h>		// socket()
