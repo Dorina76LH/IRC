@@ -13,7 +13,7 @@
 #define COLOR_YELLOW "\033[1;33m"
 
 //* -- Compilation and Execution Instructions -- *//
-// c++ -std=c++98 -Wall -Wextra -Werror tests/test_commands.cpp srcs/Client.cpp srcs/commands/Pass.cpp srcs/commands/Nick.cpp srcs/commands/User.cpp srcs/commands/Invite.cpp srcs/commands/Help.cpp srcs/Channel.cpp srcs/Bot.cpp -o test_commands
+// c++ -std=c++98 -Wall -Wextra -Werror tests/test_commands.cpp srcs/Client.cpp srcs/commands/Pass.cpp srcs/commands/Nick.cpp srcs/commands/User.cpp srcs/commands/Invite.cpp srcs/commands/Help.cpp srcs/Channel.cpp srcs/Bot.cpp srcs/commands/Kick.cpp -o test_commands
 
 //& assert(condition) : if condition is false, the program aborts immediately
 //& and prints the failing condition, file, and line number to stderr.
@@ -32,6 +32,15 @@ static std::vector<std::string> makeParams(const std::string &p0, const std::str
     std::vector<std::string> params;
     params.push_back(p0);
     params.push_back(p1);
+    return (params);
+}
+
+static std::vector<std::string> makeParams(const std::string &p0, const std::string &p1, const std::string &p2)
+{
+    std::vector<std::string> params;
+    params.push_back(p0);
+    params.push_back(p1);
+    params.push_back(p2);
     return (params);
 }
 
@@ -312,69 +321,70 @@ int main()
     std::cout << COLOR_CYAN << "=== Testing INVITE with not enough parameters ===" << COLOR_RESET << std::endl;
     Commands::handleInvite(alice, makeParams("Bob"), channels, clients);
     assert(alice.getWriteBuffer().find(" 461 ") != std::string::npos);
-    alice.clearSentData(alice.getWriteBuffer().size()); // Option 2 : vidage via clearSentData
+    alice.clearSentData(alice.getWriteBuffer().size());
     std::cout << "✅ Missing parameters rejected with 461." << std::endl;
 
-    // 2. Test ERR_NOSUCHNICK (401)
-    std::cout << COLOR_CYAN << "\n=== Testing INVITE with unknown target nickname ===" << COLOR_RESET << std::endl;
-    Commands::handleInvite(alice, makeParams("UnknownUser", "#general"), channels, clients);
-    assert(alice.getWriteBuffer().find(" 401 ") != std::string::npos);
-    alice.clearSentData(alice.getWriteBuffer().size());
-    std::cout << "✅ Unknown nickname rejected with 401." << std::endl;
-
-    // 3. Test ERR_NOSUCHCHANNEL (403)
+    // 2. Test ERR_NOSUCHCHANNEL (403)
     std::cout << COLOR_CYAN << "\n=== Testing INVITE on non-existent channel ===" << COLOR_RESET << std::endl;
     Commands::handleInvite(alice, makeParams("Bob", "#nonexistent"), channels, clients);
     assert(alice.getWriteBuffer().find(" 403 ") != std::string::npos);
     alice.clearSentData(alice.getWriteBuffer().size());
     std::cout << "✅ Non-existent channel rejected with 403." << std::endl;
 
-    // Création d'un canal réel pour la suite des tests
+    // Création du canal pour la suite des tests
     Channel genChannel("#general");
     channels["#general"] = &genChannel;
 
-    // 4. Test ERR_NOTONCHANNEL (442)
+    // 3. Test ERR_NOTONCHANNEL (442)
     std::cout << COLOR_CYAN << "\n=== Testing INVITE when inviter is not on channel ===" << COLOR_RESET << std::endl;
     Commands::handleInvite(alice, makeParams("Bob", "#general"), channels, clients);
     assert(alice.getWriteBuffer().find(" 442 ") != std::string::npos);
     alice.clearSentData(alice.getWriteBuffer().size());
     std::cout << "✅ Inviter not on channel rejected with 442." << std::endl;
 
-    // On ajoute Alice au canal (passage du pointeur &alice)
+    // Alice rejoint le canal pour pouvoir exécuter la suite
     genChannel.addMember(&alice);
 
-    // 5. Test ERR_USERONCHANNEL (443)
-    std::cout << COLOR_CYAN << "\n=== Testing INVITE when target is already on channel ===" << COLOR_RESET << std::endl;
-    genChannel.addMember(&bob); // Bob est déjà dessus (passage du pointeur &bob)
-    Commands::handleInvite(alice, makeParams("Bob", "#general"), channels, clients);
-    assert(alice.getWriteBuffer().find(" 443 ") != std::string::npos);
-    alice.clearSentData(alice.getWriteBuffer().size());
-    genChannel.removeMember(bob.getFdSocket()); // On retire Bob pour la suite
-    std::cout << "✅ Target already on channel rejected with 443." << std::endl;
-
-    // 6. Test ERR_CHANOPRIVSNEEDED (482)
+    // 4. Test ERR_CHANOPRIVSNEEDED (482)
     std::cout << COLOR_CYAN << "\n=== Testing INVITE on invite-only channel without operator status ===" << COLOR_RESET << std::endl;
-    genChannel.setInviteOnly(true); // Canal en mode +i
+    genChannel.setInviteOnly(true); // Canal passe en mode +i
     Commands::handleInvite(alice, makeParams("Bob", "#general"), channels, clients);
     assert(alice.getWriteBuffer().find(" 482 ") != std::string::npos);
     alice.clearSentData(alice.getWriteBuffer().size());
     std::cout << "✅ Non-operator invite on +i channel rejected with 482." << std::endl;
 
-    // 7. Test de SUCCÈS complet
+    // 5. Test ERR_NOSUCHNICK (401)
+    genChannel.setInviteOnly(false);
+    std::cout << COLOR_CYAN << "\n=== Testing INVITE with unknown target nickname ===" << COLOR_RESET << std::endl;
+    Commands::handleInvite(alice, makeParams("UnknownUser", "#general"), channels, clients);
+    assert(alice.getWriteBuffer().find(" 401 ") != std::string::npos);
+    alice.clearSentData(alice.getWriteBuffer().size());
+    std::cout << "✅ Unknown nickname rejected with 401." << std::endl;
+
+    // 6. Test ERR_USERONCHANNEL (443)
+    std::cout << COLOR_CYAN << "\n=== Testing INVITE when target is already on channel ===" << COLOR_RESET << std::endl;
+    genChannel.addMember(&bob); // Bob est sur le canal
+    Commands::handleInvite(alice, makeParams("Bob", "#general"), channels, clients);
+    assert(alice.getWriteBuffer().find(" 443 ") != std::string::npos);
+    alice.clearSentData(alice.getWriteBuffer().size());
+    genChannel.removeMember(bob.getFdSocket()); // On retire Bob pour le test de succès
+    std::cout << "✅ Target already on channel rejected with 443." << std::endl;
+
+    // 7. Test de SUCCÈS complet (RPL_INVITING 341)
     std::cout << COLOR_CYAN << "\n=== Testing successful INVITE execution ===" << COLOR_RESET << std::endl;
     genChannel.addOperator(alice.getFdSocket()); // Alice devient opératrice
     Commands::handleInvite(alice, makeParams("Bob", "#general"), channels, clients);
 
-    // Vérification de la confirmation RPL_INVITING (341) chez Alice
+    // Vérification de la confirmation 341 envoyée à Alice
     assert(alice.getWriteBuffer().find(" 341 ") != std::string::npos);
     assert(alice.getWriteBuffer().find("Alice Bob #general") != std::string::npos);
 
     // Vérification de la notification INVITE envoyée à Bob
     assert(bob.getWriteBuffer().find("INVITE Bob :#general") != std::string::npos);
-
     std::cout << "✅ Successful INVITE sends 341 to inviter and notification to target." << std::endl;
-    std::cout << COLOR_GREEN << "\nAll INVITE command tests passed!" << COLOR_RESET << std::endl;
-    
+
+    std::cout << COLOR_GREEN << "\nAll INVITE command tests passed!\n" << COLOR_RESET << std::endl;
+
     std::cout << COLOR_GREEN << "\n==================================================" << std::endl;
     std::cout << "HELP COMMAND TESTS" << std::endl;
     std::cout << "==================================================\n" << COLOR_RESET << std::endl;
@@ -431,6 +441,113 @@ int main()
     std::cout << "✅ Unknown command handled with clear error notice.\n" << std::endl;
     
     std::cout << COLOR_GREEN << "\nAll HELP command tests passed!\n" << COLOR_RESET << std::endl;
+
+    std::cout << COLOR_GREEN << "\n==================================================" << std::endl;
+    std::cout << "KICK COMMAND TESTS" << std::endl;
+    std::cout << "==================================================\n" << COLOR_RESET << std::endl;
+
+    // Conteneurs pour les tests KICK
+    std::map<std::string, Channel *> kickChannels;
+    std::map<int, Client *> kickClients;
+
+    // Client Kicker (Opérateur)
+    Client kicker(300);
+    kicker.setAuthenticated(true);
+    kicker.setRegistered(true);
+    kicker.setNickname("KickerOp");
+    kicker.setUsername("op_user");
+    kickClients[kicker.getFdSocket()] = &kicker;
+
+    // Client Target (Membre simple)
+    Client victim(301);
+    victim.setAuthenticated(true);
+    victim.setRegistered(true);
+    victim.setNickname("BadUser");
+    victim.setUsername("bad_user");
+    kickClients[victim.getFdSocket()] = &victim;
+
+    // 1. Test ERR_NOTREGISTERED (451)
+    std::cout << COLOR_CYAN << "=== Testing KICK with unregistered client ===" << COLOR_RESET << std::endl;
+    Client unregClient(302);
+    Commands::handleKick(unregClient, makeParams("#chan", "BadUser"), kickChannels, kickClients);
+    assert(unregClient.getWriteBuffer().find(" 451 ") != std::string::npos);
+    std::cout << "✅ Unregistered client rejected with 451." << std::endl;
+
+    // 2. Test ERR_NEEDMOREPARAMS (461)
+    std::cout << COLOR_CYAN << "\n=== Testing KICK with missing parameters ===" << COLOR_RESET << std::endl;
+    Commands::handleKick(kicker, makeParams("#chan"), kickChannels, kickClients);
+    assert(kicker.getWriteBuffer().find(" 461 ") != std::string::npos);
+    kicker.clearSentData(kicker.getWriteBuffer().size());
+    std::cout << "✅ Missing parameters rejected with 461." << std::endl;
+
+    // 3. Test ERR_BADCHANMASK (476)
+    std::cout << COLOR_CYAN << "\n=== Testing KICK with invalid channel mask ===" << COLOR_RESET << std::endl;
+    Commands::handleKick(kicker, makeParams("invalidchan", "BadUser"), kickChannels, kickClients);
+    assert(kicker.getWriteBuffer().find(" 476 ") != std::string::npos);
+    kicker.clearSentData(kicker.getWriteBuffer().size());
+    std::cout << "✅ Invalid channel mask rejected with 476." << std::endl;
+
+    // 4. Test ERR_NOSUCHCHANNEL (403)
+    std::cout << COLOR_CYAN << "\n=== Testing KICK on non-existent channel ===" << COLOR_RESET << std::endl;
+    Commands::handleKick(kicker, makeParams("#ghostchan", "BadUser"), kickChannels, kickClients);
+    assert(kicker.getWriteBuffer().find(" 403 ") != std::string::npos);
+    kicker.clearSentData(kicker.getWriteBuffer().size());
+    std::cout << "✅ Non-existent channel rejected with 403." << std::endl;
+
+    // Création du canal réél
+    Channel kickChannel("#testchan");
+    kickChannels["#testchan"] = &kickChannel;
+
+    // 5. Test ERR_NOTONCHANNEL (442)
+    std::cout << COLOR_CYAN << "\n=== Testing KICK when kicker is not on channel ===" << COLOR_RESET << std::endl;
+    Commands::handleKick(kicker, makeParams("#testchan", "BadUser"), kickChannels, kickClients);
+    assert(kicker.getWriteBuffer().find(" 442 ") != std::string::npos);
+    kicker.clearSentData(kicker.getWriteBuffer().size());
+    std::cout << "✅ Kicker not on channel rejected with 442." << std::endl;
+
+    // Ajout du kicker sur le canal
+    kickChannel.addMember(&kicker);
+
+    // 6. Test ERR_CHANOPRIVSNEEDED (482)
+    std::cout << COLOR_CYAN << "\n=== Testing KICK without operator privileges ===" << COLOR_RESET << std::endl;
+    Commands::handleKick(kicker, makeParams("#testchan", "BadUser"), kickChannels, kickClients);
+    assert(kicker.getWriteBuffer().find(" 482 ") != std::string::npos);
+    kicker.clearSentData(kicker.getWriteBuffer().size());
+    std::cout << "✅ Non-operator kicker rejected with 482." << std::endl;
+
+    // Promouvoir le kicker en Opérateur
+    kickChannel.addOperator(kicker.getFdSocket());
+
+    // 7. Test ERR_NOSUCHNICK (401)
+    std::cout << COLOR_CYAN << "\n=== Testing KICK with unknown target nickname ===" << COLOR_RESET << std::endl;
+    Commands::handleKick(kicker, makeParams("#testchan", "Unknown"), kickChannels, kickClients);
+    assert(kicker.getWriteBuffer().find(" 401 ") != std::string::npos);
+    kicker.clearSentData(kicker.getWriteBuffer().size());
+    std::cout << "✅ Non-existent target nick rejected with 401." << std::endl;
+
+    // 8. Test ERR_USERNOTINCHANNEL (441)
+    std::cout << COLOR_CYAN << "\n=== Testing KICK when target is not on channel ===" << COLOR_RESET << std::endl;
+    Commands::handleKick(kicker, makeParams("#testchan", "BadUser"), kickChannels, kickClients);
+    assert(kicker.getWriteBuffer().find(" 441 ") != std::string::npos);
+    kicker.clearSentData(kicker.getWriteBuffer().size());
+    std::cout << "✅ Target not in channel rejected with 441." << std::endl;
+
+    // Ajout de la victime sur le canal
+    kickChannel.addMember(&victim);
+
+    // 9. Succès de KICK (avec raison par défaut)
+    std::cout << COLOR_CYAN << "\n=== Testing successful KICK execution ===" << COLOR_RESET << std::endl;
+    Commands::handleKick(kicker, makeParams("#testchan", "BadUser", "Spamming"), kickChannels, kickClients);
+
+    // Vérification de la diffusion du message de KICK aux deux membres (broadcast)
+    assert(kicker.getWriteBuffer().find("KICK #testchan BadUser :Spamming") != std::string::npos);
+    assert(victim.getWriteBuffer().find("KICK #testchan BadUser :Spamming") != std::string::npos);
+
+    // Vérification du retrait effectif du membre du canal
+    assert(!kickChannel.isMember(victim.getFdSocket()));
+    std::cout << "✅ KICK executed: broadcast sent and target removed from channel." << std::endl;
+
+    std::cout << COLOR_GREEN << "\nAll KICK command tests passed!\n" << COLOR_RESET << std::endl;
 
     return 0;
 }
