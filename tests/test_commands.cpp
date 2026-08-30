@@ -549,5 +549,8 @@ int main()
 
     std::cout << COLOR_GREEN << "\nAll KICK command tests passed!\n" << COLOR_RESET << std::endl;
 
+    std::cout << COLOR_GREEN << "\n==================================================" << std::endl;
+    std::cout << "All command tests completed successfully!" << std::endl;
+    std::cout << "==================================================\n" << COLOR_RESET << std::endl;
     return 0;
 }
