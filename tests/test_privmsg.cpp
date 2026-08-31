@@ -32,12 +32,26 @@ static void clearChannels(std::map<std::string, Channel *> &channels)
 
 int main()
 {
+    // Security : PRIVMSG avant que le client ne soit enregistre (451)
+    {
+        std::map<std::string, Channel *> channels;
+        std::map<int, Client *> clients;
+        Client client(0);
+        clients[0] = &client;
+
+        Commands::handlePrivMsg(client, makeParams("bob", "salut"), channels, clients);
+        assert(client.getWriteBuffer().find(" 451 ") != std::string::npos);
+        clearChannels(channels);
+    }
+    std::cout << "0. PRIVMSG before registration rejected with 451." << std::endl;
+
     // 1. PRIVMSG sans cible : 411
     {
         std::map<std::string, Channel *> channels;
         std::map<int, Client *> clients;
         Client client(1);
         client.setNickname("ada");
+        client.setRegistered(true);
         clients[1] = &client;
 
         Commands::handlePrivMsg(client, std::vector<std::string>(), channels, clients);
@@ -51,6 +65,7 @@ int main()
         std::map<int, Client *> clients;
         Client client(2);
         client.setNickname("ada");
+        client.setRegistered(true);
         clients[2] = &client;
 
         Commands::handlePrivMsg(client, makeParams("bob"), channels, clients);
@@ -64,6 +79,7 @@ int main()
         std::map<int, Client *> clients;
         Client client(3);
         client.setNickname("ada");
+        client.setRegistered(true);
         clients[3] = &client;
 
         Commands::handlePrivMsg(client, makeParams("ghost", "salut"), channels, clients);
@@ -77,10 +93,12 @@ int main()
         std::map<int, Client *> clients;
         Client clientA(4);
         clientA.setNickname("ada");
+        clientA.setRegistered(true);
         clients[4] = &clientA;
 
         Client clientB(5);
         clientB.setNickname("bob");
+        clientB.setRegistered(true);
         clients[5] = &clientB;
 
         Commands::handlePrivMsg(clientA, makeParams("bob", "salut bob"), channels, clients);
@@ -95,6 +113,7 @@ int main()
         std::map<int, Client *> clients;
         Client client(6);
         client.setNickname("ada");
+        client.setRegistered(true);
         clients[6] = &client;
 
         Commands::handlePrivMsg(client, makeParams("#ghost", "salut"), channels, clients);
@@ -108,11 +127,13 @@ int main()
         std::map<int, Client *> clients;
         Client clientA(7);
         clientA.setNickname("ada");
+        clientA.setRegistered(true);
         clients[7] = &clientA;
         Commands::handleJoin(clientA, makeParams("#general"), channels);
 
         Client clientB(8);
         clientB.setNickname("bob");
+        clientB.setRegistered(true);
         clients[8] = &clientB;
 
         Commands::handlePrivMsg(clientB, makeParams("#general", "salut"), channels, clients);
@@ -127,11 +148,13 @@ int main()
         std::map<int, Client *> clients;
         Client clientA(9);
         clientA.setNickname("ada");
+        clientA.setRegistered(true);
         clients[9] = &clientA;
         Commands::handleJoin(clientA, makeParams("#general"), channels);
 
         Client clientB(10);
         clientB.setNickname("bob");
+        clientB.setRegistered(true);
         clients[10] = &clientB;
         Commands::handleJoin(clientB, makeParams("#general"), channels);
 
@@ -149,6 +172,7 @@ int main()
         std::map<int, Client *> clients;
         Client clientA(11);
         clientA.setNickname("ada");
+        clientA.setRegistered(true);
         clients[11] = &clientA;
         Commands::handleJoin(clientA, makeParams("#general"), channels);
 
@@ -164,14 +188,17 @@ int main()
         std::map<int, Client *> clients;
         Client clientA(12);
         clientA.setNickname("ada");
+        clientA.setRegistered(true);
         clients[12] = &clientA;
 
         Client clientB(13);
         clientB.setNickname("bob");
+        clientB.setRegistered(true);
         clients[13] = &clientB;
 
         Client clientC(14);
         clientC.setNickname("carl");
+        clientC.setRegistered(true);
         clients[14] = &clientC;
 
         Commands::handlePrivMsg(clientA, makeParams("bob,carl", "salut a tous"), channels, clients);
@@ -186,11 +213,13 @@ int main()
         std::map<int, Client *> clients;
         Client clientA(15);
         clientA.setNickname("ada");
+        clientA.setRegistered(true);
         clientA.setUsername("ada_user");
         clients[15] = &clientA;
 
         Client clientB(16);
         clientB.setNickname("bob");
+        clientB.setRegistered(true);
         clients[16] = &clientB;
 
         Commands::handlePrivMsg(clientA, makeParams("bob", "salut"), channels, clients);

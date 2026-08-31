@@ -57,6 +57,12 @@ void Commands::handlePart(Client &client, const std::vector<std::string> &comman
 {
     std::string replyTarget = client.getNickname().empty() ? "*" : client.getNickname();
 
+    if (!client.isRegistered())
+    {
+        client.appendToWriteBuffer(Commands::buildReply("451", replyTarget, "You have not registered"));
+        return;
+    }
+
     if (commandParams.empty() || commandParams[0].empty())
     {
         client.appendToWriteBuffer(Commands::buildReply("461", replyTarget, "PART", "Not enough parameters"));

@@ -129,15 +129,28 @@ bool Server::receiveData(int fd, size_t index)
 
 	client->appendToReadBuffer(std::string(buffer, bytesRead));
 
-	while (client->hasCompleteLine())
+	return false;
+}
+
+void Server::sendData(int fd, size_t index)
+{
+	Client* client = _clients[fd];
+	if (!client)
+		return;
+
+	const std::string& buffer = client->getWriteBuffer();
+	if (buffer.empty())
+		return;
+
+	ssize_t bytesSent = send(fd, buffer.c_str(), buffer.size(), 0);
+	if (bytesSent < 0)
 	{
-		std::string line = client->extractLine();
-
-		std::cout << "Message received from (FD:" << fd << ") : " << line << std::endl;
-
+		std::cerr << "Error : send() on FD " << fd << std::endl;
+		disconnectClient(index);
+		return;
 	}
 
-	return false;
+	client->clearSentData(bytesSent);
 }
 
 void Server::run()
@@ -146,7 +159,7 @@ void Server::run()
 	{
 		struct pollfd serverPfd;
 		serverPfd.fd = _fdServer;
-		serverPfd.events = POLLIN; // = 1 = y'a t'il des donnée a lire, si oui le dire dans revents
+		serverPfd.events = POLLIN; // = 1 = y'a t'il des données a lire, si oui le dire dans revents
 		serverPfd.revents = 0;
 		_pollfds.push_back(serverPfd);
 	}
@@ -154,7 +167,16 @@ void Server::run()
 	std::cout << "Server running..." << std::endl;
 	while (g_running)
 	{
-		int ret = poll(_pollfds.data(), _pollfds.size(), -1); // quels fds ecouter, -1 = attend indefiniment
+		for (size_t i = 1; i < _pollfds.size(); i++)
+		{
+			Client* client = _clients[_pollfds[i].fd];
+			if (client && client->hasDataToSend())
+				_pollfds[i].events = POLLIN | POLLOUT;
+			else
+				_pollfds[i].events = POLLIN;
+		}
+
+		int ret = poll(_pollfds.data(), _pollfds.size(), -1); // -1 = attente infinie
 		if (ret == -1)
 		{
 			if (!g_running)
@@ -176,34 +198,65 @@ void Server::run()
 			if (revents == 0)
 				continue;
 
-			bool clientDisconnected = false;
 
-			if (revents & POLLIN) // nouvelle connexion / données entrantes
+			// POLLIN  = 0000 0001 (valeur 1) = Données prete a etre lu
+			// POLLOUT = 0000 0100 (valeur 4) = Socket prêt pour l'écriture
+			// POLLERR = 0000 1000 (valeur 8) = Erreur systeme s'est produite
+			// POLLHUP = 0001 0000 (valeur 16) = le client a fermé de son coté
+			// POLLNVAL = 0010 0000 (valeur 32) = Descripteur invalide
+			if (revents & (POLLERR | POLLHUP | POLLNVAL))
+			{
+				if (fd == _fdServer)
+					throw std::runtime_error("Error : POLLERR on server socket");
+
+				disconnectClient(i);
+				i--;
+				current_size--;
+				continue;
+			}
+
+			// Gérer la lecture (POLLIN)
+			if (revents & POLLIN)
 			{
 				if (fd == _fdServer)
 					acceptNewClient();
 				else
-					clientDisconnected = receiveData(fd, i);
-			}
-
-			// POLLIN  = 0000 0001 (valeur 1) = Données prete a etre lu
-			// POLLERR = 0000 1000 (valeur 8) = Erreur systeme s'est produite
-			// POLLHUP = 0001 0000 (valeur 16) = le client a fermé de son coté
-			// POLLNVAL = 0010 0000 (valeur 32) = Descripteur invalide
-			if (!clientDisconnected && (revents & (POLLERR | POLLHUP | POLLNVAL))) // (| = OU binaire) (& = ET binaire)
-			{
-				if (fd == _fdServer)
-					throw std::runtime_error("Error : POLLERR");
-				else
 				{
-					disconnectClient(i);
-					clientDisconnected = true;
+					bool clientDisconnected = receiveData(fd, i);
+					if (clientDisconnected)
+					{
+						i--;
+						current_size--;
+						continue; // Si le client a été supprimé, pas de POLLOUT possible
+					}
+
+					Client* client = _clients[fd];
+					if (client)
+					{
+						while (client->hasCompleteLine())
+						{
+							std::string line = client->extractLine();
+							processClientMessage(client, line);
+							std::cout << "Message received from (FD:" << fd << ") : " << line << std::endl;
+							// if (client->shouldDisconnect()) // si le client s'est déconnecté via QUIT on stop immédiatement
+							// 	break;
+						}
+
+						// if (client->shouldDisconnect())
+						// {
+						// 	disconnectClient(i);
+						// 	i--;
+						// 	current_size--;
+						// 	continue;
+						// }
+					}
 				}
 			}
-			if (clientDisconnected)
+
+			// Gérer l'écriture (POLLOUT)
+			if (revents & POLLOUT)
 			{
-				i--;
-				current_size--;
+				sendData(fd, i);
 			}
 		}
 	}
@@ -217,4 +270,83 @@ Client* Server::getClientByNickname(const std::string& nickname)
 			return it->second;
 	}
 	return NULL;
+}
+
+std::vector<std::string> Server::getAllNicknames() const
+{
+	std::vector<std::string> nicknames;
+	for (std::map<int, Client*>::const_iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		if (it->second && !it->second->getNickname().empty())
+			nicknames.push_back(it->second->getNickname());
+	}
+	return nicknames;
+}
+
+void Server::finalizeRegistrationIfReady(Client* client)
+{
+	if (!client || client->isRegistered())
+		return;
+
+	if (!client->isAuthenticated() || client->getNickname().empty() || client->getUsername().empty())
+		return;
+
+	client->setRegistered(true);
+	client->appendToWriteBuffer(Commands::buildReply("001", client->getNickname(),
+		"Welcome to the Internet Relay Network " + client->getNickname()));
+}
+
+void Server::processClientMessage(Client* client, const std::string& line)
+{
+	if (!client || line.empty())
+		return;
+
+	std::string command;
+	std::vector<std::string> params;
+
+	Parser::parseLine(line, command, params);
+
+	if (command.empty())
+		return;
+
+	// La RFC 1459 ne precise pas la casse attendue pour <command> : on tolere
+	// n'importe quelle casse en normalisant en majuscules pour le dispatch,
+	// sans modifier "command" (qui reste tel que recu, pour l'echo dans les
+	// erreurs comme 421). N'affecte pas irssi, qui envoie deja en majuscules.
+	std::string upperCommand = command;
+	for (size_t i = 0; i < upperCommand.size(); ++i)
+		upperCommand[i] = static_cast<char>(std::toupper(static_cast<unsigned char>(upperCommand[i])));
+
+	if (upperCommand == "PASS")
+	{
+		Commands::handlePass(*client, params, _password);
+	}
+	else if (upperCommand == "NICK")
+	{
+		std::vector<std::string> activeNicknames = getAllNicknames();
+		Commands::handleNick(*client, params, activeNicknames);
+		finalizeRegistrationIfReady(client);
+	}
+	else if (upperCommand == "USER")
+	{
+		Commands::handleUser(*client, params);
+		finalizeRegistrationIfReady(client);
+	}
+	// else if (upperCommand == "JOIN")
+	// 	Commands::handleJoin(*client, params);
+	// else if (upperCommand == "PRIVMSG")
+	// 	Commands::handlePrivmsg(*client, params);
+	// else if (upperCommand == "KICK")
+	// 	Commands::handleKick(*client, params);
+	// else if (upperCommand == "INVITE")
+	// 	Commands::handleInvite(*client, params);
+	// else if (upperCommand == "TOPIC")
+	// 	Commands::handleTopic(*client, params);
+	// else if (upperCommand == "MODE")
+	// 	Commands::handleMode(*client, params);
+	else
+	{
+		std::string target = client->getNickname().empty() ? "*" : client->getNickname(); // Nickname si existe, sinon * (RFC 1459)
+		client->appendToWriteBuffer(Commands::buildReply("421", target, command, "Unknown command"));
+	}
 }

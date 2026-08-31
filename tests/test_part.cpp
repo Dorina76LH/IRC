@@ -32,11 +32,23 @@ static void clearChannels(std::map<std::string, Channel *> &channels)
 
 int main()
 {
+    // Security : PART avant que le client ne soit enregistre (451)
+    {
+        std::map<std::string, Channel *> channels;
+        Client client(0);
+
+        Commands::handlePart(client, makeParams("#general"), channels);
+        assert(client.getWriteBuffer().find(" 451 ") != std::string::npos);
+        clearChannels(channels);
+    }
+    std::cout << "0. PART before registration rejected with 451." << std::endl;
+
     // 1. PART sans parametre : 461
     {
         std::map<std::string, Channel *> channels;
         Client client(1);
         client.setNickname("ada");
+        client.setRegistered(true);
 
         Commands::handlePart(client, std::vector<std::string>(), channels);
         assert(client.getWriteBuffer().find(" 461 ") != std::string::npos);
@@ -49,6 +61,7 @@ int main()
         std::map<std::string, Channel *> channels;
         Client client(2);
         client.setNickname("ada");
+        client.setRegistered(true);
 
         Commands::handlePart(client, makeParams("#ghost"), channels);
         assert(client.getWriteBuffer().find(" 403 ") != std::string::npos);
@@ -61,10 +74,12 @@ int main()
         std::map<std::string, Channel *> channels;
         Client clientA(3);
         clientA.setNickname("ada");
+        clientA.setRegistered(true);
         Commands::handleJoin(clientA, makeParams("#general"), channels);
 
         Client clientB(4);
         clientB.setNickname("bob");
+        clientB.setRegistered(true);
         Commands::handlePart(clientB, makeParams("#general"), channels);
         assert(clientB.getWriteBuffer().find(" 442 ") != std::string::npos);
         clearChannels(channels);
@@ -76,10 +91,12 @@ int main()
         std::map<std::string, Channel *> channels;
         Client clientA(5);
         clientA.setNickname("ada");
+        clientA.setRegistered(true);
         Commands::handleJoin(clientA, makeParams("#general"), channels);
 
         Client clientB(6);
         clientB.setNickname("bob");
+        clientB.setRegistered(true);
         Commands::handleJoin(clientB, makeParams("#general"), channels);
 
         Commands::handlePart(clientB, makeParams("#general"), channels);
@@ -94,6 +111,7 @@ int main()
         std::map<std::string, Channel *> channels;
         Client client(7);
         client.setNickname("ada");
+        client.setRegistered(true);
         Commands::handleJoin(client, makeParams("#general"), channels);
 
         Commands::handlePart(client, makeParams("#general"), channels);
@@ -106,10 +124,12 @@ int main()
         std::map<std::string, Channel *> channels;
         Client clientA(8);
         clientA.setNickname("ada");
+        clientA.setRegistered(true);
         Commands::handleJoin(clientA, makeParams("#general"), channels);
 
         Client clientB(9);
         clientB.setNickname("bob");
+        clientB.setRegistered(true);
         Commands::handleJoin(clientB, makeParams("#general"), channels);
 
         std::string bufferBefore = clientA.getWriteBuffer();
@@ -125,10 +145,12 @@ int main()
         std::map<std::string, Channel *> channels;
         Client clientA(10);
         clientA.setNickname("ada");
+        clientA.setRegistered(true);
         Commands::handleJoin(clientA, makeParams("#general"), channels);
 
         Client clientB(11);
         clientB.setNickname("bob");
+        clientB.setRegistered(true);
         Commands::handleJoin(clientB, makeParams("#general"), channels);
 
         std::string bufferBefore = clientA.getWriteBuffer();
@@ -144,6 +166,7 @@ int main()
         std::map<std::string, Channel *> channels;
         Client client(12);
         client.setNickname("ada");
+        client.setRegistered(true);
         Commands::handleJoin(client, makeParams("#chan1,#chan2"), channels);
 
         Commands::handlePart(client, makeParams("#chan1,#chan2"), channels);
@@ -156,10 +179,12 @@ int main()
         std::map<std::string, Channel *> channels;
         Client clientA(13);
         clientA.setNickname("ada");
+        clientA.setRegistered(true);
         Commands::handleJoin(clientA, makeParams("#general"), channels);
 
         Client clientB(14);
         clientB.setNickname("bob");
+        clientB.setRegistered(true);
         Commands::handleJoin(clientB, makeParams("#general"), channels);
 
         Commands::handlePart(clientA, makeParams("#general"), channels);
@@ -174,10 +199,12 @@ int main()
         std::map<std::string, Channel *> channels;
         Client client(15);
         client.setNickname("ada");
+        client.setRegistered(true);
         Commands::handleJoin(client, makeParams("#general"), channels); // createur = operateur
 
         Client clientB(16);
         clientB.setNickname("bob");
+        clientB.setRegistered(true);
         Commands::handleJoin(clientB, makeParams("#general"), channels); // maintient le channel vivant
 
         Commands::handlePart(client, makeParams("#general"), channels);
