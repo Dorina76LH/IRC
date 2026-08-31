@@ -4,6 +4,10 @@ test_client
 test_server
 test_channel
 test_commands
+test_join
+test_topic
+test_part
+test_privmsg
 test_parser
 
 # Object files
