@@ -1,12 +1,18 @@
 #include "../../includes/Commands.hpp"
 #include "../../includes/Channel.hpp"
 
-static void handleChannelMode(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels)
+// liste des flags :
+// i : Canal sur invitation uniquement									(MODE <#canal> +i) / (MODE <#canal> -i)
+// t : Restriction de la modification du sujet aux seuls opérateurs		(MODE <#canal> +t) / (MODE <#canal> -t)
+// k : Définition / retrait du mot de passe du canal					(MODE <#canal> +k <key>) / (MODE <#canal> #chan -k)
+// o : Attribution / retrait du statut d'opérateur à un utilisateur		(MODE <#canal> +o <nickname>) / (MODE <#canal> -o <nickname>)
+// l : Définition / retrait de la limite maximale d'utilisateurs		(MODE <#canal> +l <nombreMax>) / (MODE <#canal> -l)
+void handleChannelMode(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels)
 {
 	std::string target = client.getNickname().empty() ? "*" : client.getNickname();
 	std::string channelName = commandParams[0];
-	std::map<std::string, Channel *>::iterator it = channels.find(channelName);
 
+	std::map<std::string, Channel *>::iterator it = channels.find(channelName);
 	if (it == channels.end())
 	{
 		client.appendToWriteBuffer(Commands::buildReply("403", target, channelName, "No such channel"));
@@ -32,6 +38,9 @@ static void handleChannelMode(Client &client, const std::vector<std::string> &co
 	bool adding = true;
 	size_t paramIndex = 2;
 
+	std::string appliedModes = "";
+	std::string appliedParams = "";
+
 	for (size_t i = 0; i < modeFlags.size(); ++i)
 	{
 		char flag = modeFlags[i];
@@ -40,32 +49,73 @@ static void handleChannelMode(Client &client, const std::vector<std::string> &co
 		else if (flag == '-')
 			adding = false;
 		else if (flag == 'i')
+		{
 			channel->setInviteOnly(adding);
+			appliedModes += (adding ? "+i" : "-i");
+		}
 		else if (flag == 't')
+		{
 			channel->setTopicRestricted(adding);
+			appliedModes += (adding ? "+t" : "-t");
+		}
 		else if (flag == 'k')
 		{
-			if (adding && paramIndex < commandParams.size())
-				channel->setKey(commandParams[paramIndex++]);
+			if (adding)
+			{
+				if (paramIndex < commandParams.size())
+				{
+					std::string key = commandParams[paramIndex++];
+					channel->setKey(key);
+					appliedModes += "+k";
+					appliedParams += " " + key;
+				}
+				else
+					client.appendToWriteBuffer(Commands::buildReply("461", target, "MODE", "Not enough parameters"));
+			}
 			else if (!adding)
+			{
 				channel->removeKey();
+				appliedModes += "-k";
+			}
 		}
 		else if (flag == 'l')
 		{
-			if (adding && paramIndex < commandParams.size())
+			if (adding)
 			{
-				int limit = std::atoi(commandParams[paramIndex++].c_str());
-				if (limit > 0)
-					channel->setUserLimit(limit);
+				if (paramIndex < commandParams.size())
+				{
+					int limit = atoi(commandParams[paramIndex++].c_str());
+					if (limit > 0)
+					{
+						channel->setUserLimit(limit);
+						appliedModes += "+l";
+						std::stringstream ss;
+						ss << limit;
+						appliedParams += " " + ss.str();
+					}
+				}
+				else
+					client.appendToWriteBuffer(Commands::buildReply("461", target, "MODE", "Not enough parameters"));
 			}
 			else if (!adding)
+			{
 				channel->removeUserLimit();
+				appliedModes += "-l";
+			}
 		}
 		else
 		{
 			std::string unknownChar(1, flag);
 			client.appendToWriteBuffer(Commands::buildReply("472", target, unknownChar, "is unknown mode char to me"));
 		}
+	}
+
+	if (!appliedModes.empty())
+	{
+		std::string fullPrefix = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost";
+		std::string modeMessage = fullPrefix + " MODE " + channelName + " " + appliedModes + appliedParams + "\r\n";
+		
+		channel->broadcast(modeMessage);
 	}
 }
 
