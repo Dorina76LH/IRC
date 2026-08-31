@@ -91,9 +91,18 @@ int main()
 
     std::vector<std::string> noNicknamesInUse;
 
+    //& Security: NICK before PASS validated, ERR_NOTREGISTERED (451)
+    std::cout << COLOR_CYAN << "=== Testing NICK before PASS was validated ===" << COLOR_RESET << std::endl;
+    Client clientNoAuth(9);
+    Commands::handleNick(clientNoAuth, makeParams("bob"), noNicknamesInUse);
+    assert(clientNoAuth.getNickname().empty());
+    assert(clientNoAuth.getWriteBuffer().find(" 451 ") != std::string::npos);
+    std::cout << " NICK before PASS rejected with 451." << std::endl;
+
     //& Valid nickname, no collision: nickname is set, no error reply
     std::cout << COLOR_CYAN << "=== Testing NICK with a valid nickname ===" << COLOR_RESET << std::endl;
     Client clientF(10);
+    clientF.setAuthenticated(true);
     Commands::handleNick(clientF, makeParams("ada"), noNicknamesInUse);
     assert(clientF.getNickname() == "ada");
     assert(!clientF.hasDataToSend());
@@ -102,6 +111,7 @@ int main()
     //& No nickname given: ERR_NONICKNAMEGIVEN (431)
     std::cout << COLOR_CYAN << "\n=== Testing NICK with no nickname given ===" << COLOR_RESET << std::endl;
     Client clientG(11);
+    clientG.setAuthenticated(true);
     std::vector<std::string> emptyNickParams;
     Commands::handleNick(clientG, emptyNickParams, noNicknamesInUse);
     assert(clientG.getNickname().empty());
@@ -111,6 +121,7 @@ int main()
     //& Invalid syntax: starts with a digit, ERR_ERRONEUSNICKNAME (432)
     std::cout << COLOR_CYAN << "\n=== Testing NICK starting with a digit ===" << COLOR_RESET << std::endl;
     Client clientH(12);
+    clientH.setAuthenticated(true);
     Commands::handleNick(clientH, makeParams("1nick"), noNicknamesInUse);
     assert(clientH.getNickname().empty());
     assert(clientH.getWriteBuffer().find(" 432 ") != std::string::npos);
@@ -119,6 +130,7 @@ int main()
     //& Invalid syntax: too long (> 9 characters), ERR_ERRONEUSNICKNAME (432)
     std::cout << COLOR_CYAN << "\n=== Testing NICK too long (> 9 characters) ===" << COLOR_RESET << std::endl;
     Client clientI(13);
+    clientI.setAuthenticated(true);
     Commands::handleNick(clientI, makeParams("waytoolongnick"), noNicknamesInUse);
     assert(clientI.getNickname().empty());
     assert(clientI.getWriteBuffer().find(" 432 ") != std::string::npos);
@@ -127,6 +139,7 @@ int main()
     //& Invalid syntax: disallowed character, ERR_ERRONEUSNICKNAME (432)
     std::cout << COLOR_CYAN << "\n=== Testing NICK with a disallowed character ===" << COLOR_RESET << std::endl;
     Client clientJ(14);
+    clientJ.setAuthenticated(true);
     Commands::handleNick(clientJ, makeParams("bad!nick"), noNicknamesInUse);
     assert(clientJ.getNickname().empty());
     assert(clientJ.getWriteBuffer().find(" 432 ") != std::string::npos);
@@ -135,6 +148,7 @@ int main()
     //& Valid syntax: RFC 1459 special characters allowed
     std::cout << COLOR_CYAN << "\n=== Testing NICK with allowed special characters ===" << COLOR_RESET << std::endl;
     Client clientK(15);
+    clientK.setAuthenticated(true);
     Commands::handleNick(clientK, makeParams("a-b[c]"), noNicknamesInUse);
     assert(clientK.getNickname() == "a-b[c]");
     assert(!clientK.hasDataToSend());
@@ -143,6 +157,7 @@ int main()
     //& Nickname already in use: ERR_NICKNAMEINUSE (433)
     std::cout << COLOR_CYAN << "\n=== Testing NICK already in use ===" << COLOR_RESET << std::endl;
     Client clientL(16);
+    clientL.setAuthenticated(true);
     std::vector<std::string> nicknamesInUse;
     nicknamesInUse.push_back("bob");
     Commands::handleNick(clientL, makeParams("bob"), nicknamesInUse);
@@ -154,6 +169,7 @@ int main()
     //& so nickname uniqueness must be checked case-insensitively with this mapping.
     std::cout << COLOR_CYAN << "\n=== Testing NICK collision with IRC casemapping ({}|  <-> []\\ ) ===" << COLOR_RESET << std::endl;
     Client clientL2(17);
+    clientL2.setAuthenticated(true);
     std::vector<std::string> casemappedNicknamesInUse;
     casemappedNicknamesInUse.push_back("ADA[");
     Commands::handleNick(clientL2, makeParams("ada{"), casemappedNicknamesInUse);
@@ -167,9 +183,18 @@ int main()
     std::cout << "USER COMMAND TESTS" << std::endl;
     std::cout << "==================================================\n" << COLOR_RESET << std::endl;
 
+    //& Security: USER before PASS validated, ERR_NOTREGISTERED (451)
+    std::cout << COLOR_CYAN << "=== Testing USER before PASS was validated ===" << COLOR_RESET << std::endl;
+    Client clientNoAuth2(19);
+    Commands::handleUser(clientNoAuth2, makeParams("art", "0", "*", "Bob Michel"));
+    assert(clientNoAuth2.getUsername().empty());
+    assert(clientNoAuth2.getWriteBuffer().find(" 451 ") != std::string::npos);
+    std::cout << "✅ USER before PASS rejected with 451." << std::endl;
+
     //& Valid USER command: username and realname set, no error reply
     std::cout << COLOR_CYAN << "=== Testing USER with valid parameters ===" << COLOR_RESET << std::endl;
     Client clientM(20);
+    clientM.setAuthenticated(true);
     Commands::handleUser(clientM, makeParams("ada", "0", "*", "Ada Real Name"));
     assert(clientM.getUsername() == "ada");
     assert(clientM.getRealname() == "Ada Real Name");
@@ -179,6 +204,7 @@ int main()
     //& Not enough parameters (< 4): ERR_NEEDMOREPARAMS (461)
     std::cout << COLOR_CYAN << "\n=== Testing USER with not enough parameters ===" << COLOR_RESET << std::endl;
     Client clientN(21);
+    clientN.setAuthenticated(true);
     std::vector<std::string> shortParams;
     shortParams.push_back("ada");
     shortParams.push_back("0");
@@ -190,6 +216,7 @@ int main()
     //& Empty username parameter: ERR_NEEDMOREPARAMS (461)
     std::cout << COLOR_CYAN << "\n=== Testing USER with empty username ===" << COLOR_RESET << std::endl;
     Client clientO(22);
+    clientO.setAuthenticated(true);
     Commands::handleUser(clientO, makeParams("", "0", "*", "Real Name"));
     assert(clientO.getUsername().empty());
     assert(clientO.getWriteBuffer().find(" 461 ") != std::string::npos);
@@ -198,6 +225,7 @@ int main()
     //& Empty realname parameter: ERR_NEEDMOREPARAMS (461)
     std::cout << COLOR_CYAN << "\n=== Testing USER with empty realname ===" << COLOR_RESET << std::endl;
     Client clientP(23);
+    clientP.setAuthenticated(true);
     Commands::handleUser(clientP, makeParams("ada", "0", "*", ""));
     assert(clientP.getRealname().empty());
     assert(clientP.getWriteBuffer().find(" 461 ") != std::string::npos);
@@ -206,6 +234,7 @@ int main()
     //& hostname/servername are accepted but ignored (not stored anywhere observable)
     std::cout << COLOR_CYAN << "\n=== Testing USER ignores hostname/servername ===" << COLOR_RESET << std::endl;
     Client clientQ(24);
+    clientQ.setAuthenticated(true);
     Commands::handleUser(clientQ, makeParams("ada", "untrusted-host", "untrusted-server", "Ada"));
     assert(clientQ.getUsername() == "ada");
     assert(clientQ.getRealname() == "Ada");

@@ -90,6 +90,12 @@ void Commands::handleNick(Client &client, const std::vector<std::string> &comman
     // RFC 1459 uses '*' as the target of replies sent to such a client.
     std::string replyTarget = client.getNickname().empty() ? "*" : client.getNickname();
 
+    if (!client.isAuthenticated())
+    {
+        client.appendToWriteBuffer(Commands::buildReply("451", replyTarget, "You have not registered"));
+        return;
+    }
+
     if (commandParams.empty() || commandParams[0].empty())
     {
         client.appendToWriteBuffer(Commands::buildReply("431", replyTarget, "No nickname given"));
