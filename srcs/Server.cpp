@@ -13,8 +13,13 @@ Server::~Server()
 		close(it->first);
 		delete it->second;
 	}
-
 	_clients.clear();
+
+	for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it)
+	{
+		delete it->second;
+	}
+	_channels.clear();
 
 	if (_fdServer != -1)
 		close(_fdServer);
@@ -237,7 +242,7 @@ void Server::run()
 					{
 						i--;
 						current_size--;
-						continue; // Si le client a été supprimé, pas de POLLOUT possible
+						continue;
 					}
 
 					Client* client = _clients[fd];
@@ -248,17 +253,23 @@ void Server::run()
 							std::string line = client->extractLine();
 							processClientMessage(client, line);
 							std::cout << "Message received from (FD:" << fd << ") : " << line << std::endl;
-							// if (client->shouldDisconnect()) // si le client s'est déconnecté via QUIT on stop immédiatement
-							// 	break;
+							if (_clients.find(fd) == _clients.end())
+								break;
 						}
-
-						// if (client->shouldDisconnect())
-						// {
-						// 	disconnectClient(i);
-						// 	i--;
-						// 	current_size--;
-						// 	continue;
-						// }
+					}
+					if (_clients.find(fd) == _clients.end())
+					{
+						for (size_t idx = 0; idx < _pollfds.size(); ++idx)
+						{
+							if (_pollfds[idx].fd == fd)
+							{
+								disconnectClient(idx);
+								i--;
+								current_size--;
+								break;
+							}
+						}
+						continue;
 					}
 				}
 			}
