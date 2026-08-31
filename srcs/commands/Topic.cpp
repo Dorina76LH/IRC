@@ -18,6 +18,13 @@ void Commands::handleTopic(Client &client, const std::vector<std::string> &comma
     }
 
     const std::string &channelName = commandParams[0];
+
+    if (!Channel::isValidChannelName(channelName))
+    {
+        client.appendToWriteBuffer(Commands::buildReply("476", replyTarget, channelName, "Bad Channel Mask"));
+        return;
+    }
+
     std::map<std::string, Channel *>::iterator it = channels.find(channelName);
     if (it == channels.end())
     {
