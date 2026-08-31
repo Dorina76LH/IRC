@@ -350,8 +350,8 @@ void Server::processClientMessage(Client* client, const std::string& line)
 		Commands::handleTopic(*client, params, _channels);
 	else if (upperCommand == "MODE")
 		Commands::handleMode(*client, params, _channels);
-	// else if (upperCommand == "QUIT")
-	// 	Commands::handleQuit(*client, params, _channels);
+	else if (upperCommand == "QUIT")
+		Commands::handleQuit(*client, params, *this);
 	// else if (upperCommand == "KICK")
 	// 	Commands::handleKick(*client, params);
 	// else if (upperCommand == "INVITE")

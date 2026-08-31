@@ -8,6 +8,7 @@
 #include "Client.hpp"
 
 class Channel;
+class Server;
 
 class Commands
 {
@@ -69,7 +70,7 @@ class Commands
 		/*
         Handles the QUIT command (RFC 1459).
         */
-		// static void handleQuit(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels);
+		static void handleQuit(Client &client, const std::vector<std::string> &commandParams, Server &server);
        
 		/*
         Handles the JOIN command (RFC 1459).

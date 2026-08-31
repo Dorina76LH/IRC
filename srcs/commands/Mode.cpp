@@ -8,7 +8,7 @@
 // k : Définition / retrait du mot de passe du canal					(MODE <#canal> +k <key>) / (MODE <#canal> -k)
 // o : Attribution / retrait du statut d'opérateur à un utilisateur		(MODE <#canal> +o <nickname>) / (MODE <#canal> -o <nickname>)
 // l : Définition / retrait de la limite maximale d'utilisateurs		(MODE <#canal> +l <maxNumber>) / (MODE <#canal> -l)
-void handleChannelMode(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels)
+static void handleChannelMode(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels)
 {
 	std::string target = client.getNickname().empty() ? "*" : client.getNickname();
 	std::string channelName = commandParams[0];
@@ -54,8 +54,6 @@ void handleChannelMode(Client &client, const std::vector<std::string> &commandPa
 		else if (flag == 'i' || flag == 't' || flag == 'k' || flag == 'l' || flag == 'o')
 		{
 			char expectedSign = adding ? '+' : '-';
-			
-			// Traitement spécifique selon le flag
 			bool modeApplied = false;
 
 			if (flag == 'i')
