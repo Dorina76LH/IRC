@@ -172,3 +172,27 @@ void Channel::broadcast(const std::string &message, int excludeFdSocket) const
         it->second->appendToWriteBuffer(message);
     }
 }
+
+std::string Channel::getModes() const
+{
+	std::string modes = "+";
+	std::string params = "";
+
+	if (this->_inviteOnly)
+		modes += "i";
+	if (this->_topicRestricted)
+		modes += "t";
+	if (!this->_key.empty())
+	{
+		modes += "k";
+		params += " " + this->_key;
+	}
+	if (this->_userLimit > 0)
+	{
+		modes += "l";
+		std::stringstream ss;
+		ss << this->_userLimit;
+		params += " " + ss.str();
+	}	
+	return modes + params;
+}

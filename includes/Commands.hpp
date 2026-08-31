@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <cstdlib>
 #include "Client.hpp"
 
 class Channel;
@@ -61,10 +62,16 @@ class Commands
         static void handleUser(Client &client, const std::vector<std::string> &commandParams);
 
 		/*
-        Handles the MODE command (RFC 2812).
+        Handles the MODE command (RFC 1459).
         */
-        static void handleMode(Client &client, const std::vector<std::string> &commandParams);
-        /*
+        static void handleMode(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels);
+
+		/*
+        Handles the QUIT command (RFC 1459).
+        */
+		// static void handleQuit(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels);
+       
+		/*
         Handles the JOIN command (RFC 1459).
         client : the client who sent the JOIN command
         commandParams : the parameters that followed "JOIN"

@@ -30,7 +30,7 @@ class Server
 		std::string						_password;
 		std::vector<struct pollfd>		_pollfds;
 		std::map<int, Client*>			_clients;
-		// std::map<std::string, Channel*>	_channels;
+		std::map<std::string, Channel*>	_channels;
 
 		void setupSocket();
 		void acceptNewClient();
