@@ -25,7 +25,8 @@ void handleChannelMode(Client &client, const std::vector<std::string> &commandPa
 	if (commandParams.size() == 1)
 	{
 		std::string currentModes = channel->getModes();
-		client.appendToWriteBuffer(Commands::buildReply("324", target, channelName, currentModes));
+		std::string reply = ":" + client.getNickname() + " 324 " + target + " " + channelName + " " + currentModes + "\r\n";
+		client.appendToWriteBuffer(reply);
 		return;
 	}
 
@@ -41,6 +42,7 @@ void handleChannelMode(Client &client, const std::vector<std::string> &commandPa
 
 	std::string appliedModes = "";
 	std::string appliedParams = "";
+	char currentSign = '\0';
 
 	for (size_t i = 0; i < modeFlags.size(); ++i)
 	{
@@ -49,87 +51,100 @@ void handleChannelMode(Client &client, const std::vector<std::string> &commandPa
 			adding = true;
 		else if (flag == '-')
 			adding = false;
-		else if (flag == 'i')
+		else if (flag == 'i' || flag == 't' || flag == 'k' || flag == 'l' || flag == 'o')
 		{
-			channel->setInviteOnly(adding);
-			appliedModes += (adding ? "+i" : "-i");
-		}
-		else if (flag == 't')
-		{
-			channel->setTopicRestricted(adding);
-			appliedModes += (adding ? "+t" : "-t");
-		}
-		else if (flag == 'k')
-		{
-			if (adding)
+			char expectedSign = adding ? '+' : '-';
+			
+			// Traitement spécifique selon le flag
+			bool modeApplied = false;
+
+			if (flag == 'i')
 			{
-				if (paramIndex < commandParams.size())
+				channel->setInviteOnly(adding);
+				modeApplied = true;
+			}
+			else if (flag == 't')
+			{
+				channel->setTopicRestricted(adding);
+				modeApplied = true;
+			}
+			else if (flag == 'k')
+			{
+				if (adding)
 				{
-					std::string key = commandParams[paramIndex++];
-					channel->setKey(key);
-					appliedModes += "+k";
-					appliedParams += " " + key;
+					if (paramIndex < commandParams.size())
+					{
+						std::string key = commandParams[paramIndex++];
+						channel->setKey(key);
+						appliedParams += " " + key;
+						modeApplied = true;
+					}
+					else
+						client.appendToWriteBuffer(Commands::buildReply("461", target, "MODE", "Not enough parameters"));
 				}
 				else
-					client.appendToWriteBuffer(Commands::buildReply("461", target, "MODE", "Not enough parameters"));
+				{
+					channel->removeKey();
+					modeApplied = true;
+				}
 			}
-			else if (!adding)
+			else if (flag == 'l')
 			{
-				channel->removeKey();
-				appliedModes += "-k";
+				if (adding)
+				{
+					if (paramIndex < commandParams.size())
+					{
+						int limit = atoi(commandParams[paramIndex++].c_str());
+						if (limit > 0)
+						{
+							channel->setUserLimit(limit);
+							std::stringstream ss;
+							ss << limit;
+							appliedParams += " " + ss.str();
+							modeApplied = true;
+						}
+					}
+					else
+						client.appendToWriteBuffer(Commands::buildReply("461", target, "MODE", "Not enough parameters"));
+				}
+				else
+				{
+					channel->removeUserLimit();
+					modeApplied = true;
+				}
 			}
-		}
-		else if (flag == 'l')
-		{
-			if (adding)
+			else if (flag == 'o')
 			{
 				if (paramIndex < commandParams.size())
 				{
-					int limit = atoi(commandParams[paramIndex++].c_str());
-					if (limit > 0)
+					std::string targetNick = commandParams[paramIndex++];
+					int targetFd = channel->getFdByNickname(targetNick);
+
+					if (targetFd == -1)
+						client.appendToWriteBuffer(Commands::buildReply("441", target, targetNick + " " + channelName, "They aren't on that channel"));
+					else
 					{
-						channel->setUserLimit(limit);
-						appliedModes += "+l";
-					
-						std::stringstream ss;
-						ss << limit;
-						appliedParams += " " + ss.str();
+						if (adding)
+							channel->addOperator(targetFd);
+						else
+							channel->removeOperator(targetFd);
+
+						appliedParams += " " + targetNick;
+						modeApplied = true;
 					}
 				}
 				else
-				{
 					client.appendToWriteBuffer(Commands::buildReply("461", target, "MODE", "Not enough parameters"));
-				}
 			}
-			else
-			{
-				channel->removeUserLimit();
-				appliedModes += "-l";
-			}
-		}
-		else if (flag == 'o')
-		{
-			if (paramIndex < commandParams.size())
-			{
-				std::string targetNick = commandParams[paramIndex++];
-				int targetFd = channel->getFdByNickname(targetNick);
 
-				if (targetFd == -1)
-					client.appendToWriteBuffer(Commands::buildReply("441", target, targetNick + " " + channelName, "They aren't on that channel"));
-				else
+			if (modeApplied)
+			{
+				if (currentSign != expectedSign)
 				{
-					if (adding)
-						channel->addOperator(targetFd);
-					else
-						channel->removeOperator(targetFd);
-
-					appliedModes += (adding ? "+o" : "-o");
-					appliedParams += " " + targetNick;
+					appliedModes += expectedSign;
+					currentSign = expectedSign;
 				}
-			}
-			else
-			{
-				client.appendToWriteBuffer(Commands::buildReply("461", target, "MODE", "Not enough parameters"));
+				appliedModes += flag;
 			}
 		}
 		else
@@ -169,6 +184,7 @@ static void handleUserMode(Client &client, const std::vector<std::string> &comma
 
 	std::string modeFlags = commandParams[1];
 	bool adding = true;
+	bool modeChanged = false;
 
 	for (size_t i = 0; i < modeFlags.size(); ++i)
 	{
@@ -178,15 +194,21 @@ static void handleUserMode(Client &client, const std::vector<std::string> &comma
 		else if (flag == '-')
 			adding = false;
 		else if (flag == 'i')
+		{
 			client.setInvisible(adding);
+			modeChanged = true;
+		}
 		else
 		{
-			std::string unknownChar(1, flag);
 			client.appendToWriteBuffer(Commands::buildReply("501", target, "Unknown MODE flag"));
 		}
 	}
-	std::string reply = ":" + client.getNickname() + " MODE " + client.getNickname() + " :" + modeFlags + "\r\n";
-	client.appendToWriteBuffer(reply);
+
+	if (modeChanged)
+	{
+		std::string reply = ":" + client.getNickname() + " MODE " + client.getNickname() + " :" + modeFlags + "\r\n";
+		client.appendToWriteBuffer(reply);
+	}
 }
 
 void Commands::handleMode(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels)
