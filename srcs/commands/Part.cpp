@@ -23,6 +23,12 @@ static std::vector<std::string> splitByComma(const std::string &list)
 static void partSingleChannel(Client &client, const std::string &channelName, const std::string &partMessage,
                                 std::map<std::string, Channel *> &channels, const std::string &replyTarget)
 {
+    if (!Channel::isValidChannelName(channelName))
+    {
+        client.appendToWriteBuffer(Commands::buildReply("476", replyTarget, channelName, "Bad Channel Mask"));
+        return;
+    }
+
     std::map<std::string, Channel *>::iterator it = channels.find(channelName);
     if (it == channels.end())
     {
