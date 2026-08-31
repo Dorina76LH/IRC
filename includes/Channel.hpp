@@ -71,7 +71,8 @@ class Channel
 
 		// Mode getters
 		std::string getModes() const;
-
+		int getFdByNickname(const std::string &nickname) const;
+		
     private:
 
         // Channel information

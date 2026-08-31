@@ -1,12 +1,13 @@
 #include "../../includes/Commands.hpp"
 #include "../../includes/Channel.hpp"
+#include "../../includes/Server.hpp"
 
 // liste des flags :
 // i : Canal sur invitation uniquement									(MODE <#canal> +i) / (MODE <#canal> -i)
 // t : Restriction de la modification du sujet aux seuls opérateurs		(MODE <#canal> +t) / (MODE <#canal> -t)
-// k : Définition / retrait du mot de passe du canal					(MODE <#canal> +k <key>) / (MODE <#canal> #chan -k)
+// k : Définition / retrait du mot de passe du canal					(MODE <#canal> +k <key>) / (MODE <#canal> -k)
 // o : Attribution / retrait du statut d'opérateur à un utilisateur		(MODE <#canal> +o <nickname>) / (MODE <#canal> -o <nickname>)
-// l : Définition / retrait de la limite maximale d'utilisateurs		(MODE <#canal> +l <nombreMax>) / (MODE <#canal> -l)
+// l : Définition / retrait de la limite maximale d'utilisateurs		(MODE <#canal> +l <maxNumber>) / (MODE <#canal> -l)
 void handleChannelMode(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels)
 {
 	std::string target = client.getNickname().empty() ? "*" : client.getNickname();
@@ -89,18 +90,46 @@ void handleChannelMode(Client &client, const std::vector<std::string> &commandPa
 					{
 						channel->setUserLimit(limit);
 						appliedModes += "+l";
+					
 						std::stringstream ss;
 						ss << limit;
 						appliedParams += " " + ss.str();
 					}
 				}
 				else
+				{
 					client.appendToWriteBuffer(Commands::buildReply("461", target, "MODE", "Not enough parameters"));
+				}
 			}
-			else if (!adding)
+			else
 			{
 				channel->removeUserLimit();
 				appliedModes += "-l";
+			}
+		}
+		else if (flag == 'o')
+		{
+			if (paramIndex < commandParams.size())
+			{
+				std::string targetNick = commandParams[paramIndex++];
+				int targetFd = channel->getFdByNickname(targetNick);
+
+				if (targetFd == -1)
+					client.appendToWriteBuffer(Commands::buildReply("441", target, targetNick + " " + channelName, "They aren't on that channel"));
+				else
+				{
+					if (adding)
+						channel->addOperator(targetFd);
+					else
+						channel->removeOperator(targetFd);
+
+					appliedModes += (adding ? "+o" : "-o");
+					appliedParams += " " + targetNick;
+				}
+			}
+			else
+			{
+				client.appendToWriteBuffer(Commands::buildReply("461", target, "MODE", "Not enough parameters"));
 			}
 		}
 		else

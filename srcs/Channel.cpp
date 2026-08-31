@@ -1,4 +1,5 @@
 #include "../includes/Channel.hpp"
+#include "../includes/Client.hpp"
 
 //Canonical methods
 
@@ -195,4 +196,14 @@ std::string Channel::getModes() const
 		params += " " + ss.str();
 	}	
 	return modes + params;
+}
+
+int Channel::getFdByNickname(const std::string &nickname) const
+{
+    for (std::map<int, Client *>::const_iterator it = _members.begin(); it != _members.end(); ++it)
+    {
+        if (it->second && it->second->getNickname() == nickname)
+            return it->first;
+    }
+    return -1;
 }

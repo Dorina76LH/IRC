@@ -94,6 +94,16 @@ void Server::disconnectClient(size_t index)
 
 	int fd = _pollfds[index].fd;
 
+	for (std::map<std::string, Channel*>::iterator chanIt = _channels.begin(); chanIt != _channels.end(); ++chanIt)
+	{
+		Channel *channel = chanIt->second;
+		if (channel && channel->isMember(fd))
+		{
+			channel->removeMember(fd);
+			channel->removeOperator(fd);
+		}
+	}
+
 	std::map<int, Client*>::iterator it = _clients.find(fd);
 	if (it != _clients.end())
 	{
@@ -333,14 +343,14 @@ void Server::processClientMessage(Client* client, const std::string& line)
 		finalizeRegistrationIfReady(client);
 	}
 	else if (upperCommand == "JOIN")
-	    Commands::handleJoin(*client, params, _channels);
+		Commands::handleJoin(*client, params, _channels);
 	else if (upperCommand == "PRIVMSG")
 		Commands::handlePrivMsg(*client, params, _channels, _clients);
 	else if (upperCommand == "TOPIC")
 		Commands::handleTopic(*client, params, _channels);
-	else if (command == "MODE")
+	else if (upperCommand == "MODE")
 		Commands::handleMode(*client, params, _channels);
-	// else if (command == "QUIT")
+	// else if (upperCommand == "QUIT")
 	// 	Commands::handleQuit(*client, params, _channels);
 	// else if (upperCommand == "KICK")
 	// 	Commands::handleKick(*client, params);
