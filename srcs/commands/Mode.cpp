@@ -148,6 +148,7 @@ void handleChannelMode(Client &client, const std::vector<std::string> &commandPa
 	}
 }
 
+// l : Marque l'utilisateur comme invisible		(MODE <#user> +i) / (MODE <#user> -i)
 static void handleUserMode(Client &client, const std::vector<std::string> &commandParams)
 {
 	std::string target = client.getNickname().empty() ? "*" : client.getNickname();
@@ -162,7 +163,7 @@ static void handleUserMode(Client &client, const std::vector<std::string> &comma
 	if (commandParams.size() == 1)
 	{
 		std::string umodes = client.isInvisible() ? "+i" : "+";
-		client.appendToWriteBuffer(Commands::buildReply("221", target, umodes, ""));
+		client.appendToWriteBuffer(Commands::buildReply("221", target, umodes));
 		return;
 	}
 
@@ -181,13 +182,13 @@ static void handleUserMode(Client &client, const std::vector<std::string> &comma
 		else
 		{
 			std::string unknownChar(1, flag);
-			client.appendToWriteBuffer(Commands::buildReply("472", target, unknownChar, "is unknown mode char to me"));
+			client.appendToWriteBuffer(Commands::buildReply("501", target, "Unknown MODE flag"));
 		}
 	}
+	std::string reply = ":" + client.getNickname() + " MODE " + client.getNickname() + " :" + modeFlags + "\r\n";
+	client.appendToWriteBuffer(reply);
 }
 
-
-// Méthode de la classe Commands
 void Commands::handleMode(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels)
 {
 	std::string target = client.getNickname().empty() ? "*" : client.getNickname();
