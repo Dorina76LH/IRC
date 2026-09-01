@@ -1,11 +1,44 @@
 #ifndef COMMANDS_HPP
 #define COMMANDS_HPP
 
+// --- INCLUDES ---
 #include <string>
 #include <vector>
 #include <map>
 #include <cstdlib>
 #include "Client.hpp"
+#include "../includes/Client.hpp"
+#include "../includes/Bot.hpp"
+
+// --- NUMERIC REPLIES ---
+#define RPL_INVITING "341"
+#define HOSTNAME "localhost"
+
+// --- ERROR REPLIES ---
+#define ERR_NOSUCHNICK "401"
+#define ERR_NOSUCHCHANNEL "403"
+#define ERR_UNKNOWNCOMMAND "421"
+#define ERR_USERNOTINCHANNEL "441"
+#define ERR_NOTONCHANNEL "442"
+#define ERR_USERONCHANNEL "443"
+#define ERR_NOTREGISTERED "451"
+#define ERR_NEEDMOREPARAMS "461"
+#define ERR_ALREADYREGISTRED "462"
+#define ERR_BADCHANMASK "476"
+#define ERR_CHANOPRIVSNEEDED "482"
+
+// --- Standard errors ---
+#define MSG_NOSUCHNICK "No such nick/channel"
+#define MSG_NOSUCHCHANNEL "No such channel"
+#define MSG_UNKNOWNCOMMAND "Unknown command"
+#define MSG_USERNOTINCHANNEL "They aren't on that channel"
+#define MSG_NOTONCHANNEL "You're not on that channel"
+#define MSG_USERONCHANNEL "is already on channel"
+#define MSG_NOTREGISTERED "You have not registered"
+#define MSG_NEEDMOREPARAMS "Not enough parameters"
+#define MSG_ALREADYREGISTRED "You may not reregister"
+#define MSG_BADCHANMASK "Bad Channel Mask"
+#define MSG_CHANOPRIVSNEEDED "You're not channel operator"
 
 class Channel;
 class Server;
@@ -85,6 +118,30 @@ class Commands
         static void handleJoin(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels);
 
         /*
+        Handles the INVITE command (RFC 1459).
+        Command : INVITE <nickname> <channel>
+        client : the client who sent the INVITE command
+        commandParams : the parameters that followed "INVITE"
+        (commandParams[0] = nickname of the client to invite, commandParams[1] = channel name)
+        channels : all channels known to the server, keyed by channel name.
+        clients : every client currently connected to the server, keyed by fd socket.
+        */
+        static void handleInvite(Client &client, const std::vector<std::string> &commandParams,
+                     std::map<std::string, Channel *> &channels, std::map<int, Client *> &clients);
+        
+        /*
+        Handles the KICK command (RFC 1459).
+        Command : KICK <channel> <user> [<comment>]
+        client : the client who sent the KICK command
+        commandParams : the parameters that followed "KICK"
+        (commandParams[0] = channel name, commandParams[1] = nickname of the client to kick, commandParams[2] = optional comment)
+        channels : all channels known to the server, keyed by channel name.
+        clients : every client currently connected to the server, keyed by fd socket.
+        */
+        static void handleKick(Client &client, const std::vector<std::string> &commandParams,
+                       std::map<std::string, Channel *> &channels, std::map<int, Client *> &clients);
+
+        /*
         Handles the TOPIC command (RFC 1459).
         client : the client who sent the TOPIC command
         commandParams : the parameters that followed "TOPIC"
@@ -118,7 +175,17 @@ class Commands
         Used to resolve a nickname target to the Client it belongs to.
         */
         static void handlePrivMsg(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels, std::map<int, Client *> &clients);
-
+        
+        /*
+        Handles the HELP command
+        client : the client who sent the HELP command
+        commandParams : the parameters that followed "HELP"
+        (commandParams[0] = optional command name to get help for, or empty to get a list of all commands)
+        bot : the bot instance, used to access the help map and print help messages
+        Used to provide help information to the client about available commands and their usage.
+        */
+        static void handleHelp(Client &client, const std::vector<std::string> &commandParams, Bot &bot);
+    
     private:
 
         // Utility class only: no instance should ever be created.

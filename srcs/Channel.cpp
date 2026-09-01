@@ -12,6 +12,23 @@ Channel::~Channel()
 {
 }
 
+// Validation helpers
+bool Channel::isValidChannelName(const std::string &channelName)
+{
+    if (channelName.empty())
+        return (false);
+    if (channelName[0] != '#' && channelName[0] != '&')
+        return (false);
+
+    for (size_t index = 1; index < channelName.size(); ++index)
+    {
+        char currentCharacter = channelName[index];
+        if (currentCharacter == ' ' || currentCharacter == ',' || currentCharacter == '\x07')
+            return (false);
+    }
+    return (true);
+}
+
 //Channel information
 
 const std::string & Channel::getName() const

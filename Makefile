@@ -18,6 +18,8 @@ SRCS_FILES	= main.cpp \
 			  Server.cpp \
 			  Channel.cpp \
 			  Parser.cpp \
+			  Bot.cpp \
+			  commands/Help.cpp \
 			  commands/Invite.cpp \
 			  commands/Join.cpp \
 			  commands/Kick.cpp \
@@ -39,11 +41,11 @@ DEPS		= $(OBJS:.o=.d)
 all: $(NAME)
 
 $(NAME): $(OBJS)
-	$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
+	@$ $(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
 
 $(OBJ_DIR)/%.o: $(SRCS_DIR)/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(DEPFLAGS) $(INCLUDES) -c $< -o $@
+	@$ $(CXX) $(CXXFLAGS) $(DEPFLAGS) $(INCLUDES) -c $< -o $@
 
 -include $(DEPS)
 

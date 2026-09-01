@@ -24,6 +24,9 @@ class Channel
         Channel(const std::string &name);
         ~Channel();
 
+        // Validation helpers
+        static bool isValidChannelName(const std::string &name);
+
         // Channel information getters
         const std::string & getName() const;
         const std::string & getTopic() const;
