@@ -1,25 +1,6 @@
 #include "../../includes/Commands.hpp"
 #include "../../includes/Channel.hpp"
 
-static std::vector<std::string> splitByComma(const std::string &list)
-{
-    std::vector<std::string> parts;
-    size_t start = 0;
-
-    while (start <= list.size())
-    {
-        size_t comma = list.find(',', start);
-        if (comma == std::string::npos)
-        {
-            parts.push_back(list.substr(start));
-            break;
-        }
-        parts.push_back(list.substr(start, comma - start));
-        start = comma + 1;
-    }
-    return (parts);
-}
-
 static void partSingleChannel(Client &client, const std::string &channelName, const std::string &partMessage,
                                 std::map<std::string, Channel *> &channels, const std::string &replyTarget)
 {
@@ -75,7 +56,7 @@ void Commands::handlePart(Client &client, const std::vector<std::string> &comman
         return;
     }
 
-    std::vector<std::string> channelNames = splitByComma(commandParams[0]);
+    std::vector<std::string> channelNames = Commands::splitByComma(commandParams[0]);
     std::string partMessage = (commandParams.size() > 1) ? commandParams[1] : "";
 
     for (size_t index = 0; index < channelNames.size(); ++index)

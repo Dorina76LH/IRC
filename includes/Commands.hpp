@@ -68,6 +68,29 @@ class Commands
         }
 
         /*
+        Splits a comma-separated list (e.g. "#chan1,#chan2" or "nick1,nick2") into its parts.
+        Used by JOIN, PART and PRIVMSG to handle multiple targets in a single command.
+        */
+        static std::vector<std::string> splitByComma(const std::string &list)
+        {
+            std::vector<std::string> parts;
+            size_t start = 0;
+
+            while (start <= list.size())
+            {
+                size_t comma = list.find(',', start);
+                if (comma == std::string::npos)
+                {
+                    parts.push_back(list.substr(start));
+                    break;
+                }
+                parts.push_back(list.substr(start, comma - start));
+                start = comma + 1;
+            }
+            return parts;
+        }
+
+        /*
         Handles the NICK command (RFC 1459).
         client : the client who sent the NICK command
         commandParams : the parameters that followed "NICK" (commandParams[0] = requested nickname)

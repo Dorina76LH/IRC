@@ -1,25 +1,6 @@
 #include "../../includes/Commands.hpp"
 #include "../../includes/Channel.hpp"
 
-static std::vector<std::string> splitByComma(const std::string &list)
-{
-    std::vector<std::string> parts;
-    size_t start = 0;
-
-    while (start <= list.size())
-    {
-        size_t comma = list.find(',', start);
-        if (comma == std::string::npos)
-        {
-            parts.push_back(list.substr(start));
-            break;
-        }
-        parts.push_back(list.substr(start, comma - start));
-        start = comma + 1;
-    }
-    return (parts);
-}
-
 static bool isChannelTarget(const std::string &target)
 {
     return (!target.empty() && (target[0] == '#' || target[0] == '&'));
@@ -93,7 +74,7 @@ void Commands::handlePrivMsg(Client &client, const std::vector<std::string> &com
         return;
     }
 
-    std::vector<std::string> targets = splitByComma(commandParams[0]);
+    std::vector<std::string> targets = Commands::splitByComma(commandParams[0]);
     const std::string &message = commandParams[1];
 
     for (size_t index = 0; index < targets.size(); ++index)
