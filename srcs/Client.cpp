@@ -27,7 +27,8 @@ Client::Client(int fdSocket) :  _fdSocket(fdSocket),
                                 _isRegistered(false),
                                 _isAuthenticated(false),
                                 _readBuffer(""),
-                                _writeBuffer("") 
+                                _writeBuffer(""),
+                                _isInvisible(false)
 {    }
 
 //? Destructor
