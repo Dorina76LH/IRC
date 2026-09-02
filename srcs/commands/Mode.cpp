@@ -206,7 +206,8 @@ static void handleUserMode(Client &client, const std::vector<std::string> &comma
 
 	if (modeChanged)
 	{
-		std::string reply = ":" + client.getNickname() + " MODE " + client.getNickname() + " :" + modeFlags + "\r\n";
+		std::string fullPrefix = ":" + client.getNickname() + "!" + client.getUsername() + "@localhost";
+		std::string reply = fullPrefix + " MODE " + client.getNickname() + " :" + modeFlags + "\r\n";
 		client.appendToWriteBuffer(reply);
 	}
 }
