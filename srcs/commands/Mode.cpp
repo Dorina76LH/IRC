@@ -25,8 +25,7 @@ static void handleChannelMode(Client &client, const std::vector<std::string> &co
 	if (commandParams.size() == 1)
 	{
 		std::string currentModes = channel->getModes();
-		std::string reply = ":" + client.getNickname() + " 324 " + target + " " + channelName + " " + currentModes + "\r\n";
-		client.appendToWriteBuffer(reply);
+		client.appendToWriteBuffer(Commands::buildReply("324", target, channelName, currentModes));
 		return;
 	}
 
