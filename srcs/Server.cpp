@@ -386,10 +386,10 @@ void Server::processClientMessage(Client* client, const std::string& line)
 		Commands::handleMode(*client, params, _channels);
 	else if (upperCommand == "QUIT")
 		Commands::handleQuit(*client, params, *this);
-	// else if (upperCommand == "KICK")
-	// 	Commands::handleKick(*client, params);
-	// else if (upperCommand == "INVITE")
-	// 	Commands::handleInvite(*client, params);
+	else if (upperCommand == "KICK")
+		Commands::handleKick(*client, params, _channels, _clients);
+	else if (upperCommand == "INVITE")
+		Commands::handleInvite(*client, params, _channels, _clients);
 	else
 	{
 		std::string target = client->getNickname().empty() ? "*" : client->getNickname(); // Nickname si existe, sinon * (RFC 1459)
