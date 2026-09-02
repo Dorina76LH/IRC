@@ -6,7 +6,7 @@
 /*   By: asnothar <asnothar@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/15 19:08:52 by doberes           #+#    #+#             */
-/*   Updated: 2026/08/30 15:33:05 by asnothar         ###   ########.fr       */
+/*   Updated: 2026/09/02 04:14:54 by asnothar         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,8 @@ Client::Client(int fdSocket) :  _fdSocket(fdSocket),
                                 _isAuthenticated(false),
                                 _readBuffer(""),
                                 _writeBuffer(""),
-                                _isInvisible(false)
+								_isInvisible(false),
+								_isToDisconnect(false)
 {    }
 
 //? Destructor
@@ -58,6 +59,11 @@ const std::string & Client::getUsername() const
 const std::string & Client::getRealname() const
 {
     return (this->_realname);
+}
+
+bool Client::getIsToDisconnect() const
+{
+    return (this->_isToDisconnect);
 }
 
 //? Check if the client is registered
@@ -142,6 +148,10 @@ void Client::setInvisible(bool status)
 	this->_isInvisible = status;
 }
 
+void Client::setIsToDisconnect(bool status)
+{
+	this->_isToDisconnect = status;
+}
 
 //* -- Read buffer management -> client to server -- *//
 // Data coming from the client (read from the socket)

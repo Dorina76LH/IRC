@@ -6,7 +6,7 @@
 /*   By: asnothar <asnothar@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/15 18:49:08 by doberes           #+#    #+#             */
-/*   Updated: 2026/08/30 15:29:03 by asnothar         ###   ########.fr       */
+/*   Updated: 2026/09/02 03:12:57 by asnothar         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,6 +102,9 @@ class Client
 
 		void setInvisible(bool status);
 		bool isInvisible() const;
+		void setIsToDisconnect(bool status);
+		bool getIsToDisconnect() const;
+
         
         private:
         
@@ -128,6 +131,7 @@ class Client
 
 		// Client status
 		bool		_isInvisible;
+		bool		_isToDisconnect;
 
         
 };

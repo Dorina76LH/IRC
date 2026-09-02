@@ -214,15 +214,11 @@ void Server::run()
 				continue;
 
 
-			// POLLIN  = 0000 0001 (valeur 1) = Données prete a etre lu
-			// POLLOUT = 0000 0100 (valeur 4) = Socket prêt pour l'écriture
-			// POLLERR = 0000 1000 (valeur 8) = Erreur systeme s'est produite
-			// POLLHUP = 0001 0000 (valeur 16) = le client a fermé de son coté
 			// POLLNVAL = 0010 0000 (valeur 32) = Descripteur invalide
-			if (revents & (POLLERR | POLLHUP | POLLNVAL))
+			if (revents & (POLLNVAL))
 			{
 				if (fd == _fdServer)
-					throw std::runtime_error("Error : POLLERR on server socket");
+					throw std::runtime_error("Error : POLLNVAL on server socket");
 
 				disconnectClient(i);
 				i--;
@@ -230,6 +226,8 @@ void Server::run()
 				continue;
 			}
 
+
+			// POLLIN  = 0000 0001 (valeur 1) = Données prete a etre lu
 			// Gérer la lecture (POLLIN)
 			if (revents & POLLIN)
 			{
@@ -274,10 +272,35 @@ void Server::run()
 				}
 			}
 
+	
+			// POLLOUT = 0000 0100 (valeur 4) = Socket prêt pour l'écriture
+			// POLLERR = 0000 1000 (valeur 8) = Erreur systeme s'est produite
+			// POLLHUP = 0001 0000 (valeur 16) = le client a fermé de son coté
+			if (revents & (POLLERR | POLLHUP))
+			{
+				if (fd == _fdServer)
+					throw std::runtime_error("Error : POLLERR on server socket");
+
+				disconnectClient(i);
+				i--;
+				current_size--;
+				continue;
+			}
+
+
 			// Gérer l'écriture (POLLOUT)
 			if (revents & POLLOUT)
 			{
 				sendData(fd, i);
+
+				Client* client = _clients[fd];
+				if (client && client->getIsToDisconnect() && !client->hasDataToSend())
+				{
+					disconnectClient(i);
+					i--;
+					current_size--;
+					continue;
+				}
 			}
 		}
 	}

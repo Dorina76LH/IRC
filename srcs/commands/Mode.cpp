@@ -101,6 +101,9 @@ static void handleChannelMode(Client &client, const std::vector<std::string> &co
 							appliedParams += " " + ss.str();
 							modeApplied = true;
 						}
+						else
+							client.appendToWriteBuffer(Commands::buildReply("461", target, "MODE", "Invalid limit parameter"));
+
 					}
 					else
 						client.appendToWriteBuffer(Commands::buildReply("461", target, "MODE", "Not enough parameters"));

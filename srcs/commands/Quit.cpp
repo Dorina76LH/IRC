@@ -59,5 +59,5 @@ void Commands::handleQuit(Client &client, const std::vector<std::string> &comman
 
 	client.appendToWriteBuffer(errorMessage);
 	server.broadcastToSharedChannels(client.getFdSocket(), quitMessage);
-	server.disconnectClientByFd(client.getFdSocket());
+	client.setIsToDisconnect(true);
 }
