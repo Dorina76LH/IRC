@@ -2,18 +2,6 @@
 #include "../../includes/Client.hpp"
 #include "../../includes/Server.hpp"
 
-void Server::disconnectClientByFd(int fd)
-{
-	for (size_t i = 0; i < _pollfds.size(); ++i)
-	{
-		if (_pollfds[i].fd == fd)
-		{
-			disconnectClient(i);
-			return;
-		}
-	}
-}
-
 void Server::broadcastToSharedChannels(int clientFd, const std::string &message)
 {
 	std::set<int> recipients;

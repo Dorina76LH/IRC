@@ -45,7 +45,6 @@ class Server
 		~Server();
 		void processClientMessage(Client* client, const std::string& line);
 		void disconnectClient(size_t index);
-		void disconnectClientByFd(int fd);
 		void broadcastToSharedChannels(int clientFd, const std::string &message);
 	
 		void run();
