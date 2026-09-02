@@ -36,16 +36,17 @@ class Server
 		void setupSocket();
 		void acceptNewClient();
 		bool receiveData(int fd, size_t index);
-		Client* getClientByNickname(const std::string &nickname);
-		std::vector<std::string> getAllNicknames() const;
 		void sendData(int fd, size_t index);
-		void finalizeRegistrationIfReady(Client* client);
+
 	public:
 		Server(int port, const std::string &password);
 		~Server();
 		void processClientMessage(Client* client, const std::string& line);
 		void disconnectClient(size_t index);
 		void broadcastToSharedChannels(int clientFd, const std::string &message);
+		Client* getClientByNickname(const std::string &nickname);
+		std::vector<std::string> getAllNicknames() const;
+		void finalizeRegistrationIfReady(Client* client);
 	
 		void run();
 };
