@@ -4,6 +4,7 @@
 
 #include <string> 
 #include <map>   // std::map (membres, operateurs, invites)
+#include <sstream>
 #include "Client.hpp"
 
 class Channel
@@ -71,6 +72,10 @@ class Channel
         // Broadcasting - forward a message to every member (optionally skipping one)
         void    broadcast(const std::string &message, int excludeFdSocket = -1) const;
 
+		// Mode getters
+		std::string getModes() const;
+		int getFdByNickname(const std::string &nickname) const;
+		
     private:
 
         // Channel information

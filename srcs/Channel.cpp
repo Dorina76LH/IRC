@@ -1,4 +1,5 @@
 #include "../includes/Channel.hpp"
+#include "../includes/Client.hpp"
 
 //Canonical methods
 
@@ -188,4 +189,38 @@ void Channel::broadcast(const std::string &message, int excludeFdSocket) const
             continue;
         it->second->appendToWriteBuffer(message);
     }
+}
+
+std::string Channel::getModes() const
+{
+	std::string modes = "+";
+	std::string params = "";
+
+	if (this->_inviteOnly)
+		modes += "i";
+	if (this->_topicRestricted)
+		modes += "t";
+	if (!this->_key.empty())
+	{
+		modes += "k";
+		params += " " + this->_key;
+	}
+	if (this->_userLimit > 0)
+	{
+		modes += "l";
+		std::stringstream ss;
+		ss << this->_userLimit;
+		params += " " + ss.str();
+	}	
+	return modes + params;
+}
+
+int Channel::getFdByNickname(const std::string &nickname) const
+{
+    for (std::map<int, Client *>::const_iterator it = _members.begin(); it != _members.end(); ++it)
+    {
+        if (it->second && it->second->getNickname() == nickname)
+            return it->first;
+    }
+    return -1;
 }

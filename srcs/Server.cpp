@@ -13,8 +13,13 @@ Server::~Server()
 		close(it->first);
 		delete it->second;
 	}
-
 	_clients.clear();
+
+	for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it)
+	{
+		delete it->second;
+	}
+	_channels.clear();
 
 	if (_fdServer != -1)
 		close(_fdServer);
@@ -93,6 +98,16 @@ void Server::disconnectClient(size_t index)
 		return;
 
 	int fd = _pollfds[index].fd;
+
+	for (std::map<std::string, Channel*>::iterator chanIt = _channels.begin(); chanIt != _channels.end(); ++chanIt)
+	{
+		Channel *channel = chanIt->second;
+		if (channel && channel->isMember(fd))
+		{
+			channel->removeMember(fd);
+			channel->removeOperator(fd);
+		}
+	}
 
 	std::map<int, Client*>::iterator it = _clients.find(fd);
 	if (it != _clients.end())
@@ -199,15 +214,11 @@ void Server::run()
 				continue;
 
 
-			// POLLIN  = 0000 0001 (valeur 1) = Données prete a etre lu
-			// POLLOUT = 0000 0100 (valeur 4) = Socket prêt pour l'écriture
-			// POLLERR = 0000 1000 (valeur 8) = Erreur systeme s'est produite
-			// POLLHUP = 0001 0000 (valeur 16) = le client a fermé de son coté
 			// POLLNVAL = 0010 0000 (valeur 32) = Descripteur invalide
-			if (revents & (POLLERR | POLLHUP | POLLNVAL))
+			if (revents & (POLLNVAL))
 			{
 				if (fd == _fdServer)
-					throw std::runtime_error("Error : POLLERR on server socket");
+					throw std::runtime_error("Error : POLLNVAL on server socket");
 
 				disconnectClient(i);
 				i--;
@@ -215,6 +226,8 @@ void Server::run()
 				continue;
 			}
 
+
+			// POLLIN  = 0000 0001 (valeur 1) = Données prete a etre lu
 			// Gérer la lecture (POLLIN)
 			if (revents & POLLIN)
 			{
@@ -227,7 +240,7 @@ void Server::run()
 					{
 						i--;
 						current_size--;
-						continue; // Si le client a été supprimé, pas de POLLOUT possible
+						continue;
 					}
 
 					Client* client = _clients[fd];
@@ -238,25 +251,56 @@ void Server::run()
 							std::string line = client->extractLine();
 							processClientMessage(client, line);
 							std::cout << "Message received from (FD:" << fd << ") : " << line << std::endl;
-							// if (client->shouldDisconnect()) // si le client s'est déconnecté via QUIT on stop immédiatement
-							// 	break;
+							if (_clients.find(fd) == _clients.end())
+								break;
 						}
-
-						// if (client->shouldDisconnect())
-						// {
-						// 	disconnectClient(i);
-						// 	i--;
-						// 	current_size--;
-						// 	continue;
-						// }
+					}
+					if (_clients.find(fd) == _clients.end())
+					{
+						for (size_t idx = 0; idx < _pollfds.size(); ++idx)
+						{
+							if (_pollfds[idx].fd == fd)
+							{
+								disconnectClient(idx);
+								i--;
+								current_size--;
+								break;
+							}
+						}
+						continue;
 					}
 				}
 			}
+
+	
+			// POLLOUT = 0000 0100 (valeur 4) = Socket prêt pour l'écriture
+			// POLLERR = 0000 1000 (valeur 8) = Erreur systeme s'est produite
+			// POLLHUP = 0001 0000 (valeur 16) = le client a fermé de son coté
+			if (revents & (POLLERR | POLLHUP))
+			{
+				if (fd == _fdServer)
+					throw std::runtime_error("Error : POLLERR on server socket");
+
+				disconnectClient(i);
+				i--;
+				current_size--;
+				continue;
+			}
+
 
 			// Gérer l'écriture (POLLOUT)
 			if (revents & POLLOUT)
 			{
 				sendData(fd, i);
+
+				Client* client = _clients[fd];
+				if (client && client->getIsToDisconnect() && !client->hasDataToSend())
+				{
+					disconnectClient(i);
+					i--;
+					current_size--;
+					continue;
+				}
 			}
 		}
 	}
@@ -332,18 +376,20 @@ void Server::processClientMessage(Client* client, const std::string& line)
 		Commands::handleUser(*client, params);
 		finalizeRegistrationIfReady(client);
 	}
-	// else if (upperCommand == "JOIN")
-	// 	Commands::handleJoin(*client, params);
-	// else if (upperCommand == "PRIVMSG")
-	// 	Commands::handlePrivmsg(*client, params);
-	// else if (upperCommand == "KICK")
-	// 	Commands::handleKick(*client, params);
-	// else if (upperCommand == "INVITE")
-	// 	Commands::handleInvite(*client, params);
-	// else if (upperCommand == "TOPIC")
-	// 	Commands::handleTopic(*client, params);
-	// else if (upperCommand == "MODE")
-	// 	Commands::handleMode(*client, params);
+	else if (upperCommand == "JOIN")
+		Commands::handleJoin(*client, params, _channels);
+	else if (upperCommand == "PRIVMSG")
+		Commands::handlePrivMsg(*client, params, _channels, _clients);
+	else if (upperCommand == "TOPIC")
+		Commands::handleTopic(*client, params, _channels);
+	else if (upperCommand == "MODE")
+		Commands::handleMode(*client, params, _channels);
+	else if (upperCommand == "QUIT")
+		Commands::handleQuit(*client, params, *this);
+	else if (upperCommand == "KICK")
+		Commands::handleKick(*client, params, _channels, _clients);
+	else if (upperCommand == "INVITE")
+		Commands::handleInvite(*client, params, _channels, _clients);
 	else
 	{
 		std::string target = client->getNickname().empty() ? "*" : client->getNickname(); // Nickname si existe, sinon * (RFC 1459)

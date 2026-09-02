@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <cstdlib>
+#include "Client.hpp"
 #include "../includes/Client.hpp"
 #include "../includes/Bot.hpp"
 
@@ -39,6 +41,7 @@
 #define MSG_CHANOPRIVSNEEDED "You're not channel operator"
 
 class Channel;
+class Server;
 
 class Commands
 {
@@ -62,6 +65,29 @@ class Commands
         static std::string buildReply(const std::string &code, const std::string &target, const std::string &param, const std::string &message)
         {
             return (":ircserv " + code + " " + target + " " + param + " :" + message + "\r\n");
+        }
+
+        /*
+        Splits a comma-separated list (e.g. "#chan1,#chan2" or "nick1,nick2") into its parts.
+        Used by JOIN, PART and PRIVMSG to handle multiple targets in a single command.
+        */
+        static std::vector<std::string> splitByComma(const std::string &list)
+        {
+            std::vector<std::string> parts;
+            size_t start = 0;
+
+            while (start <= list.size())
+            {
+                size_t comma = list.find(',', start);
+                if (comma == std::string::npos)
+                {
+                    parts.push_back(list.substr(start));
+                    break;
+                }
+                parts.push_back(list.substr(start, comma - start));
+                start = comma + 1;
+            }
+            return parts;
         }
 
         /*
@@ -92,7 +118,17 @@ class Commands
         */
         static void handleUser(Client &client, const std::vector<std::string> &commandParams);
 
-        /*
+		/*
+        Handles the MODE command (RFC 1459).
+        */
+        static void handleMode(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels);
+
+		/*
+        Handles the QUIT command (RFC 1459).
+        */
+		static void handleQuit(Client &client, const std::vector<std::string> &commandParams, Server &server);
+       
+		/*
         Handles the JOIN command (RFC 1459).
         client : the client who sent the JOIN command
         commandParams : the parameters that followed "JOIN"

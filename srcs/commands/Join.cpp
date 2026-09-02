@@ -1,25 +1,6 @@
 #include "../../includes/Commands.hpp"
 #include "../../includes/Channel.hpp"
 
-static std::vector<std::string> splitByComma(const std::string &list)
-{
-    std::vector<std::string> parts;
-    size_t start = 0;
-
-    while (start <= list.size())
-    {
-        size_t comma = list.find(',', start);
-        if (comma == std::string::npos)
-        {
-            parts.push_back(list.substr(start));
-            break;
-        }
-        parts.push_back(list.substr(start, comma - start));
-        start = comma + 1;
-    }
-    return (parts);
-}
-
 // RFC 1459, 1.3 : <channel> ::= ('#' | '&') <chstring>
 // <chstring> excludes spaces, commas (used as a list separator) and the
 // control character 0x07 (BEL, used as a message terminator by some clients).
@@ -124,8 +105,8 @@ void Commands::handleJoin(Client &client, const std::vector<std::string> &comman
         return;
     }
 
-    std::vector<std::string> channelNames = splitByComma(commandParams[0]);
-    std::vector<std::string> keys = (commandParams.size() > 1) ? splitByComma(commandParams[1]) : std::vector<std::string>();
+    std::vector<std::string> channelNames = Commands::splitByComma(commandParams[0]);
+    std::vector<std::string> keys = (commandParams.size() > 1) ? Commands::splitByComma(commandParams[1]) : std::vector<std::string>();
 
     for (size_t index = 0; index < channelNames.size(); ++index)
     {

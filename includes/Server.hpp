@@ -12,6 +12,7 @@
 #include <cctype>
 #include <vector>
 #include <map>
+#include <set>
 #include <sys/socket.h>		// socket()
 #include <netinet/in.h>		// AF_INET
 #include <fcntl.h>			// fcntl(), F_GETFL, F_SETFL, O_NONBLOCK
@@ -30,11 +31,10 @@ class Server
 		std::string						_password;
 		std::vector<struct pollfd>		_pollfds;
 		std::map<int, Client*>			_clients;
-		// std::map<std::string, Channel*>	_channels;
+		std::map<std::string, Channel*>	_channels;
 
 		void setupSocket();
 		void acceptNewClient();
-		void disconnectClient(size_t index);
 		bool receiveData(int fd, size_t index);
 		Client* getClientByNickname(const std::string &nickname);
 		std::vector<std::string> getAllNicknames() const;
@@ -44,6 +44,8 @@ class Server
 		Server(int port, const std::string &password);
 		~Server();
 		void processClientMessage(Client* client, const std::string& line);
+		void disconnectClient(size_t index);
+		void broadcastToSharedChannels(int clientFd, const std::string &message);
 	
 		void run();
 };
