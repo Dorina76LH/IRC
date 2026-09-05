@@ -124,6 +124,11 @@ class Commands
         static void handleMode(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels);
 
 		/*
+        Handles the PING command (RFC 1459).
+        */
+		static void handlePing(Client &client, const std::vector<std::string> &commandParams);
+
+		/*
         Handles the QUIT command (RFC 1459).
         */
 		static void handleQuit(Client &client, const std::vector<std::string> &commandParams, Server &server);
