@@ -29,6 +29,12 @@ static void handleChannelMode(Client &client, const std::vector<std::string> &co
 		return;
 	}
 
+	if (!channel->isMember(client.getFdSocket()))
+	{
+		client.appendToWriteBuffer(Commands::buildReply("442", target, channelName, "You're not on that channel"));
+		return;
+	}
+
 	if (!channel->isOperator(client.getFdSocket()))
 	{
 		client.appendToWriteBuffer(Commands::buildReply("482", target, channelName, "You're not channel operator"));
@@ -215,6 +221,12 @@ static void handleUserMode(Client &client, const std::vector<std::string> &comma
 void Commands::handleMode(Client &client, const std::vector<std::string> &commandParams, std::map<std::string, Channel *> &channels)
 {
 	std::string target = client.getNickname().empty() ? "*" : client.getNickname();
+
+	if (!client.isRegistered())
+	{
+		client.appendToWriteBuffer(Commands::buildReply("451", target, "MODE", "You have not registered"));
+		return;
+	}
 
 	if (commandParams.empty())
 	{

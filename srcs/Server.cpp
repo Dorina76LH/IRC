@@ -376,6 +376,8 @@ void Server::processClientMessage(Client* client, const std::string& line)
 		Commands::handleUser(*client, params);
 		finalizeRegistrationIfReady(client);
 	}
+	else if (upperCommand == "PING")
+		Commands::handlePing(*client, params);
 	else if (upperCommand == "JOIN")
 		Commands::handleJoin(*client, params, _channels);
 	else if (upperCommand == "PRIVMSG")

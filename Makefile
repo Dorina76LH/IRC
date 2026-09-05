@@ -30,6 +30,7 @@ SRCS_FILES	= main.cpp \
 			  commands/PrivMsg.cpp \
 			  commands/Topic.cpp \
 			  commands/Quit.cpp \
+			  commands/Ping.cpp \
 			  commands/User.cpp
 
 OBJ_FILES	= $(SRCS_FILES:.cpp=.o)
