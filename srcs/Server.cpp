@@ -392,6 +392,10 @@ void Server::processClientMessage(Client* client, const std::string& line)
 		Commands::handleKick(*client, params, _channels, _clients);
 	else if (upperCommand == "INVITE")
 		Commands::handleInvite(*client, params, _channels, _clients);
+	else if (upperCommand == "PART")
+		Commands::handlePart(*client, params, _channels);
+	else if (upperCommand == "HELP")
+		Commands::handleHelp(*client, params, _bot);
 	else
 	{
 		std::string target = client->getNickname().empty() ? "*" : client->getNickname(); // Nickname si existe, sinon * (RFC 1459)

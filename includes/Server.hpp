@@ -4,6 +4,7 @@
 #include "Channel.hpp"
 #include "Commands.hpp"
 #include "Parser.hpp"
+#include "Bot.hpp"
 #include <unistd.h>
 #include <iostream>
 #include <string>
@@ -32,6 +33,7 @@ class Server
 		std::vector<struct pollfd>		_pollfds;
 		std::map<int, Client*>			_clients;
 		std::map<std::string, Channel*>	_channels;
+		Bot								_bot;
 
 		void setupSocket();
 		void acceptNewClient();

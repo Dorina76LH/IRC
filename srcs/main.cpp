@@ -59,6 +59,7 @@ int main(int argc, char **argv)
 	std::signal(SIGINT, signalHandler);
 	std::signal(SIGQUIT, signalHandler);
 	std::signal(SIGTERM, signalHandler);
+	std::signal(SIGPIPE, SIG_IGN);
 	try
 	{
 		Server server(std::atoi(argv[1]), argv[2]);
