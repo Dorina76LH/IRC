@@ -99,14 +99,22 @@ void Server::disconnectClient(size_t index)
 
 	int fd = _pollfds[index].fd;
 
-	for (std::map<std::string, Channel*>::iterator chanIt = _channels.begin(); chanIt != _channels.end(); ++chanIt)
+	for (std::map<std::string, Channel*>::iterator chanIt = _channels.begin(); chanIt != _channels.end();)
 	{
 		Channel *channel = chanIt->second;
 		if (channel && channel->isMember(fd))
 		{
 			channel->removeMember(fd);
 			channel->removeOperator(fd);
+
+			if (channel->getMemberCount() == 0)
+			{
+				delete channel;
+				_channels.erase(chanIt++);
+				continue;
+			}
 		}
+		++chanIt;
 	}
 
 	std::map<int, Client*>::iterator it = _clients.find(fd);
