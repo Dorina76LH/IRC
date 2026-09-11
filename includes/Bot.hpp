@@ -50,6 +50,9 @@ class Bot
         void helpKick(std::ostream &os);
         void helpTopic(std::ostream &os);
         void helpMode(std::ostream &os);
+        void helpQuit(std::ostream &os);
+        void helpPing(std::ostream &os);
+        void helpHelp(std::ostream &os);
 
         //& define pointers to member functions for each help command
         typedef void (Bot::*HelpFunc)(std::ostream &os);

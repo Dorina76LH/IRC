@@ -72,6 +72,9 @@ void Bot::initHelpMap()
     _helpMap["PRIVMSG"] = &Bot::helpPrivMsg;
     _helpMap["TOPIC"] = &Bot::helpTopic;
     _helpMap["USER"] = &Bot::helpUser;
+    _helpMap["QUIT"] = &Bot::helpQuit;
+    _helpMap["PING"] = &Bot::helpPing;
+    _helpMap["HELP"] = &Bot::helpHelp;
 }
 
 //* Individual help command handlers
@@ -150,6 +153,29 @@ void Bot::helpUser(std::ostream &os)
     os << COLOR_YELLOW << "Description : " << COLOR_RESET << "Specifies username, hostname, servername and realname." << std::endl;
     os << COLOR_YELLOW << "Usage       : " << COLOR_RESET << "USER <username> <hostname> <servername> :<realname>" << std::endl;
     os << COLOR_YELLOW << "Notes       : " << COLOR_RESET << "Used during registration after PASS." << std::endl;
+}
+
+void Bot::helpQuit(std::ostream &os)
+{
+    os << COLOR_GREEN  << "\n=== Command QUIT ===" << COLOR_RESET << std::endl;
+    os << COLOR_YELLOW << "Description : " << COLOR_RESET << "Disconnects cleanly from the server." << std::endl;
+    os << COLOR_YELLOW << "Usage       : " << COLOR_RESET << "QUIT [:<reason>]" << std::endl;
+    os << COLOR_YELLOW << "Notes       : " << COLOR_RESET << "Notifies all channels you are on before closing the connection." << std::endl;
+}
+
+void Bot::helpPing(std::ostream &os)
+{
+    os << COLOR_GREEN  << "\n=== Command PING ===" << COLOR_RESET << std::endl;
+    os << COLOR_YELLOW << "Description : " << COLOR_RESET << "Checks that the connection is still alive." << std::endl;
+    os << COLOR_YELLOW << "Usage       : " << COLOR_RESET << "PING <token>" << std::endl;
+    os << COLOR_YELLOW << "Notes       : " << COLOR_RESET << "Server replies with PONG :<token>." << std::endl;
+}
+
+void Bot::helpHelp(std::ostream &os)
+{
+    os << COLOR_GREEN  << "\n=== Command HELP ===" << COLOR_RESET << std::endl;
+    os << COLOR_YELLOW << "Description : " << COLOR_RESET << "Lists available commands, or describes one specific command." << std::endl;
+    os << COLOR_YELLOW << "Usage       : " << COLOR_RESET << "HELP [<command>]" << std::endl;
 }
 
 // Handles the help command and prints the help message to the client
