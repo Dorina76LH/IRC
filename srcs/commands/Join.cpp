@@ -84,6 +84,8 @@ static void joinSingleChannel(Client &client, const std::string &channelName, co
 
     if (!channel->getTopic().empty())
         client.appendToWriteBuffer(Commands::buildReply("332", replyTarget, channelName, channel->getTopic()));
+    else
+        client.appendToWriteBuffer(Commands::buildReply("331", replyTarget, channelName, "No topic is set"));
 
     client.appendToWriteBuffer(Commands::buildReply("353", replyTarget, "= " + channelName, buildNamesReply(*channel)));
     client.appendToWriteBuffer(Commands::buildReply("366", replyTarget, channelName, "End of /NAMES list"));
